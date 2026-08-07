@@ -76,10 +76,10 @@ const experienceConfig = {
       src: "assets/scenes/01-aerial-detail-1600.webp", mobileSrc: "assets/scenes/01-aerial-detail-900.webp",
       focus: { desktop: "52% 50%", tabletLandscape: "52% 50%", tabletPortrait: "52% 50%", mobile: "52% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#7d776f", transition: "matched-push", transitionTarget: "podium-to-tower fold at 57% / 68%",
-      camera: { origin: "57% 68%", start: [0.988, 0.6, 0.6], read: [1.002, 0, 0], end: [1.044, -0.8, -1.1] },
-      cameraMobile: { origin: "57% 66%", start: [0.992, 0.2, 0.3], read: [1, 0, 0], end: [1.03, -0.35, -0.55] },
+      camera: { origin: "57% 68%", start: [1, 0.45, 0], read: [1.008, 0, 0], end: [1.05, -0.75, 0] },
+      cameraMobile: { origin: "57% 66%", start: [1, 0.2, 0], read: [1.006, 0, 0], end: [1.034, -0.35, 0] },
       caption: { side: "right", vertical: "bottom" },
       life: { type: "sea-shimmer", mask: "linear-gradient(180deg, transparent 0 42%, #000 58% 88%, transparent 98%)", opacity: 0.2 }
     },
@@ -89,10 +89,10 @@ const experienceConfig = {
       src: "assets/scenes/02-icon-exterior-1600.webp", mobileSrc: "assets/scenes/02-icon-exterior-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#82786c", transition: "tower-rise", transitionTarget: "seaward podium sweep at 39% / 72%",
-      camera: { origin: "39% 72%", start: [0.99, -0.35, 0.35], read: [1.003, 0, 0], end: [1.045, 0.9, -0.45] },
-      cameraMobile: { origin: "45% 70%", start: [0.992, -0.15, 0.2], read: [1, 0, 0], end: [1.03, 0.45, -0.25] },
+      camera: { origin: "39% 72%", start: [1, -0.3, 0], read: [1.008, 0, 0], end: [1.05, 0.85, 0] },
+      cameraMobile: { origin: "45% 70%", start: [1, -0.15, 0], read: [1.006, 0, 0], end: [1.034, 0.45, 0] },
       caption: { side: "left", vertical: "top" },
       life: { type: "light-breath", mask: "radial-gradient(circle at 18% 30%, #000 0 19%, transparent 44%)", opacity: 0.2 }
     },
@@ -102,10 +102,10 @@ const experienceConfig = {
       src: "assets/scenes/03-promenade-1600.webp", mobileSrc: "assets/scenes/03-promenade-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#463f37", transition: "horizon-cut", transitionTarget: "glazed podium entrance at 73% / 54%",
-      camera: { origin: "73% 54%", start: [0.99, -0.45, 0.35], read: [1.004, 0, 0], end: [1.046, -0.9, -0.35] },
-      cameraMobile: { origin: "70% 54%", start: [0.992, -0.2, 0.2], read: [1, 0, 0], end: [1.032, -0.5, -0.2] },
+      camera: { origin: "73% 54%", start: [1, -0.4, 0], read: [1.008, 0, 0], end: [1.052, -0.9, 0] },
+      cameraMobile: { origin: "70% 54%", start: [1, -0.2, 0], read: [1.006, 0, 0], end: [1.035, -0.5, 0] },
       caption: { side: "left", vertical: "top" },
       life: { type: "sea-shimmer", mask: "linear-gradient(90deg, #000 0 30%, transparent 47% 100%)", opacity: 0.22 }
     },
@@ -115,10 +115,10 @@ const experienceConfig = {
       src: "assets/scenes/04-podium-close-1600.webp", mobileSrc: "assets/scenes/04-podium-close-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#5f615d", transition: "ribbon-wipe", transitionTarget: "sweeping planted ribbon at 61% / 55%",
-      camera: { origin: "61% 55%", start: [0.992, 0.45, 0.25], read: [1.006, 0, 0], end: [1.048, -0.85, -0.25] },
-      cameraMobile: { origin: "61% 55%", start: [0.994, 0.2, 0.1], read: [1, 0, 0], end: [1.03, -0.4, -0.15] },
+      camera: { origin: "61% 55%", start: [1, 0.4, 0], read: [1.008, 0, 0], end: [1.052, -0.85, 0] },
+      cameraMobile: { origin: "61% 55%", start: [1, 0.2, 0], read: [1.006, 0, 0], end: [1.035, -0.4, 0] },
       caption: { side: "left", vertical: "bottom" },
       life: { type: "water-reflection", mask: "radial-gradient(ellipse at 58% 78%, #000 0 24%, transparent 52%)", opacity: 0.24 }
     },
@@ -128,10 +128,10 @@ const experienceConfig = {
       src: "assets/scenes/05-podium-landscape-1600.webp", mobileSrc: "assets/scenes/05-podium-landscape-900.webp",
       focus: { desktop: "48% 50%", tabletLandscape: "48% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#506169", transition: "ribbon-match", transitionTarget: "white loop and inner garden at 34% / 52%",
-      camera: { origin: "34% 52%", start: [0.992, -0.45, 0.3], read: [1.004, 0, 0], end: [1.045, 0.85, -0.3] },
-      cameraMobile: { origin: "38% 52%", start: [0.994, -0.2, 0.15], read: [1, 0, 0], end: [1.03, 0.45, -0.15] },
+      camera: { origin: "34% 52%", start: [1, -0.4, 0], read: [1.008, 0, 0], end: [1.05, 0.85, 0] },
+      cameraMobile: { origin: "38% 52%", start: [1, -0.2, 0], read: [1.006, 0, 0], end: [1.034, 0.45, 0] },
       caption: { side: "right", vertical: "top" },
       life: { type: "garden-light", mask: "linear-gradient(180deg, transparent 0 40%, #000 57% 86%, transparent 100%)", opacity: 0.18 }
     },
@@ -141,10 +141,10 @@ const experienceConfig = {
       src: "assets/scenes/06-envelope-1600.webp", mobileSrc: "assets/scenes/06-envelope-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "wide-stage", tabletLandscape: "wide-stage", tabletPortrait: "wide-stage", mobile: "wide-stage" },
+      presentation: { desktop: "wide-cinematic", tabletLandscape: "wide-cinematic", tabletPortrait: "wide-cinematic", mobile: "wide-cinematic" },
       tone: "#56666c", transition: "ribbon-wipe", transitionTarget: "central glazed opening at 54% / 49%",
-      camera: { origin: "54% 49%", start: [0.988, 0.45, 0.25], read: [1.002, 0, 0], end: [1.05, -0.75, -0.45] },
-      cameraMobile: { origin: "54% 49%", start: [0.992, 0.2, 0.1], read: [1, 0, 0], end: [1.032, -0.4, -0.2] },
+      camera: { origin: "54% 49%", start: [1, 0.4, 0], read: [1.006, 0, 0], end: [1.052, -0.75, 0] },
+      cameraMobile: { origin: "54% 49%", start: [1, 0.2, 0], read: [1.004, 0, 0], end: [1.034, -0.4, 0] },
       caption: { side: "right", vertical: "top" },
       life: { type: "sea-shimmer", mask: "linear-gradient(90deg, transparent 0 58%, #000 72% 100%)", opacity: 0.18 }
     },
@@ -154,10 +154,10 @@ const experienceConfig = {
       src: "assets/scenes/07-public-court-1600.webp", mobileSrc: "assets/scenes/07-public-court-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#766757", transition: "void-push", transitionTarget: "central sky opening at 53% / 45%",
-      camera: { origin: "53% 45%", start: [0.99, 0, 0.5], read: [1.004, 0, 0], end: [1.052, -0.2, -0.85] },
-      cameraMobile: { origin: "53% 47%", start: [0.993, 0, 0.25], read: [1, 0, 0], end: [1.034, -0.1, -0.45] },
+      camera: { origin: "53% 45%", start: [1, 0, 0], read: [1.008, 0, 0], end: [1.055, -0.2, 0] },
+      cameraMobile: { origin: "53% 47%", start: [1, 0, 0], read: [1.006, 0, 0], end: [1.036, -0.1, 0] },
       caption: { side: "left", vertical: "bottom" },
       life: { type: "water-reflection", mask: "radial-gradient(ellipse at 76% 82%, #000 0 20%, transparent 48%)", opacity: 0.22 }
     },
@@ -167,10 +167,10 @@ const experienceConfig = {
       src: "assets/scenes/08-atrium-1600.webp", mobileSrc: "assets/scenes/08-atrium-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#6b5b4b", transition: "void-match", transitionTarget: "sea-facing glazing at 67% / 56%",
-      camera: { origin: "67% 56%", start: [0.992, 0.45, 0.25], read: [1.004, 0, 0], end: [1.046, -0.8, -0.3] },
-      cameraMobile: { origin: "65% 55%", start: [0.994, 0.2, 0.1], read: [1, 0, 0], end: [1.03, -0.4, -0.15] },
+      camera: { origin: "67% 56%", start: [1, 0.4, 0], read: [1.008, 0, 0], end: [1.052, -0.8, 0] },
+      cameraMobile: { origin: "65% 55%", start: [1, 0.2, 0], read: [1.006, 0, 0], end: [1.035, -0.4, 0] },
       caption: { side: "right", vertical: "bottom" },
       life: { type: "water-reflection", mask: "radial-gradient(ellipse at 58% 80%, #000 0 24%, transparent 53%)", opacity: 0.22 }
     },
@@ -180,10 +180,10 @@ const experienceConfig = {
       src: "assets/scenes/10-social-lounge-1600.webp", mobileSrc: "assets/scenes/10-social-lounge-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#433b35", transition: "glass-dissolve", transitionTarget: "central seating and coastal glazing at 58% / 58%",
-      camera: { origin: "58% 58%", start: [0.992, 0.35, 0.3], read: [1.004, 0, 0], end: [1.045, -0.65, -0.4] },
-      cameraMobile: { origin: "58% 58%", start: [0.994, 0.15, 0.15], read: [1, 0, 0], end: [1.03, -0.35, -0.2] },
+      camera: { origin: "58% 58%", start: [1, 0.3, 0], read: [1.008, 0, 0], end: [1.05, -0.65, 0] },
+      cameraMobile: { origin: "58% 58%", start: [1, 0.15, 0], read: [1.006, 0, 0], end: [1.034, -0.35, 0] },
       caption: { side: "left", vertical: "bottom" },
       life: { type: "light-breath", mask: "linear-gradient(90deg, transparent 0 24%, #000 48% 100%)", opacity: 0.16 }
     },
@@ -193,10 +193,10 @@ const experienceConfig = {
       src: "assets/scenes/09-office-1600.webp", mobileSrc: "assets/scenes/09-office-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#3d4447", transition: "glass-wipe", transitionTarget: "panoramic glazing at 73% / 54%",
-      camera: { origin: "73% 54%", start: [0.99, 0.6, 0.1], read: [1.002, 0, 0], end: [1.04, -1.05, -0.1] },
-      cameraMobile: { origin: "70% 54%", start: [0.993, 0.25, 0.05], read: [1, 0, 0], end: [1.027, -0.5, -0.05] },
+      camera: { origin: "73% 54%", start: [1, 0.5, 0], read: [1.008, 0, 0], end: [1.048, -1, 0] },
+      cameraMobile: { origin: "70% 54%", start: [1, 0.25, 0], read: [1.006, 0, 0], end: [1.032, -0.5, 0] },
       caption: { side: "left", vertical: "middle" },
       life: { type: "horizon-haze", mask: "linear-gradient(180deg, transparent 0 36%, #000 48% 68%, transparent 78%)", opacity: 0.15 }
     },
@@ -206,10 +206,10 @@ const experienceConfig = {
       src: "assets/scenes/11-residence-1600.webp", mobileSrc: "assets/scenes/11-residence-900.webp",
       focus: { desktop: "50% 52%", tabletLandscape: "50% 52%", tabletPortrait: "52% 51%", mobile: "52% 51%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "portrait-stage", tabletLandscape: "portrait-stage", tabletPortrait: "portrait-stage", mobile: "portrait-stage" },
+      presentation: { desktop: "portrait", tabletLandscape: "portrait", tabletPortrait: "portrait", mobile: "portrait" },
       tone: "#2c2824", transition: "depth-dissolve", transitionTarget: "curved living room and daylight",
-      camera: { origin: "34% 48%", start: [0.99, 0, 0.35], read: [1.002, 0, 0], end: [1.038, 0.45, -0.35] },
-      cameraMobile: { origin: "38% 48%", start: [0.994, 0, 0.15], read: [1, 0, 0], end: [1.025, 0.25, -0.18] },
+      camera: { origin: "34% 48%", start: [1, -0.25, 0], read: [1.006, 0, 0], end: [1.045, 0.45, 0] },
+      cameraMobile: { origin: "38% 48%", start: [1, -0.15, 0], read: [1.004, 0, 0], end: [1.03, 0.25, 0] },
       caption: { side: "left", vertical: "middle" },
       life: { type: "garden-light", mask: "linear-gradient(180deg, transparent 0 34%, #000 48% 76%, transparent 88%)", opacity: 0.14 }
     },
@@ -219,10 +219,10 @@ const experienceConfig = {
       src: "assets/scenes/12-sky-lounge-1600.webp", mobileSrc: "assets/scenes/12-sky-lounge-900.webp",
       focus: { desktop: "50% 52%", tabletLandscape: "52% 52%", tabletPortrait: "54% 52%", mobile: "55% 52%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "portrait-stage", tabletLandscape: "portrait-stage", tabletPortrait: "portrait-stage", mobile: "portrait-stage" },
+      presentation: { desktop: "portrait", tabletLandscape: "portrait", tabletPortrait: "portrait", mobile: "portrait" },
       tone: "#2e2925", transition: "ceiling-match", transitionTarget: "sea horizon",
-      camera: { origin: "52% 62%", start: [0.992, 0, 0.3], read: [1.002, 0, 0], end: [1.036, -0.2, -0.4] },
-      cameraMobile: { origin: "52% 60%", start: [0.994, 0, 0.15], read: [1, 0, 0], end: [1.024, -0.1, -0.2] },
+      camera: { origin: "52% 62%", start: [1, 0.15, 0], read: [1.006, 0, 0], end: [1.042, -0.2, 0] },
+      cameraMobile: { origin: "52% 60%", start: [1, 0.1, 0], read: [1.004, 0, 0], end: [1.028, -0.1, 0] },
       caption: { side: "left", vertical: "middle" },
       life: { type: "sea-shimmer", mask: "linear-gradient(180deg, transparent 0 47%, #000 58% 82%, transparent 92%)", opacity: 0.18 }
     },
@@ -232,10 +232,10 @@ const experienceConfig = {
       src: "assets/scenes/13-waterfront-coda-1600.webp", mobileSrc: "assets/scenes/13-waterfront-coda-900.webp",
       focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      presentation: { desktop: "standard-landscape", tabletLandscape: "standard-landscape", tabletPortrait: "standard-landscape", mobile: "standard-landscape" },
       tone: "#657c8a", transition: "horizon-dissolve", transitionTarget: "tower and open sea",
-      camera: { origin: "55% 52%", start: [0.99, 0.45, 0.35], read: [1.002, 0, 0], end: [1.034, -0.35, -0.45] },
-      cameraMobile: { origin: "55% 52%", start: [0.994, 0.2, 0.15], read: [1, 0, 0], end: [1.022, -0.2, -0.25] },
+      camera: { origin: "55% 52%", start: [1, 0.35, 0], read: [1.006, 0, 0], end: [1.04, -0.35, 0] },
+      cameraMobile: { origin: "55% 52%", start: [1, 0.15, 0], read: [1.004, 0, 0], end: [1.028, -0.2, 0] },
       caption: { side: "right", vertical: "top" },
       life: { type: "sea-shimmer", mask: "linear-gradient(90deg, #000 0 46%, transparent 68% 100%)", opacity: 0.2 }
     }
@@ -917,48 +917,16 @@ const SceneDeck = {
     this.loadAround(next);
   },
 
-  enterState(type) {
-    if (Env.reducedMotion) return { autoAlpha: 0 };
-    if (Env.mobile) {
-      return { autoAlpha: 0, scale: ["matched-push", "void-push", "void-match"].includes(type) ? 1.012 : 1.006 };
-    }
-    if (Env.tabletPortrait && ["ribbon-wipe", "ribbon-match", "void-push", "void-match"].includes(type)) {
-      return { autoAlpha: 0, scale: 1.018 };
-    }
-    switch (type) {
-      case "matched-push":
-        return { autoAlpha: 0, scale: 0.985 };
-      case "tower-rise":
-        return { autoAlpha: 1, clipPath: "inset(100% 0 0 0)", scale: 0.994 };
-      case "horizon-cut":
-        return { autoAlpha: 1, clipPath: "inset(0 0 100% 0)", scale: 1.004 };
-      case "ribbon-wipe":
-      case "ribbon-match":
-        return { autoAlpha: 1, clipPath: "polygon(0 86%, 30% 78%, 68% 94%, 100% 82%, 100% 100%, 0 100%)" };
-      case "void-push":
-      case "void-match":
-        return { autoAlpha: 1, clipPath: "circle(7% at 54% 47%)", scale: 1.015 };
-      case "glass-wipe":
-        return { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" };
-      case "ceiling-match":
-        return { autoAlpha: 1, clipPath: "inset(100% 0 0 0)" };
-      case "depth-dissolve":
-        return { autoAlpha: 0, scale: 1.035, filter: "blur(3px)" };
-      default:
-        return { autoAlpha: 0, scale: 1.008 };
-    }
+  enterState() {
+    return {
+      autoAlpha: 0,
+      scale: Env.reducedMotion ? 1 : 0.992,
+      clipPath: "inset(0 0 0 0)",
+      filter: "none"
+    };
   },
 
-  enterEndState(type) {
-    if (Env.mobile || Env.tabletPortrait) {
-      return { autoAlpha: 1, scale: 1, clipPath: "inset(0 0 0 0)", filter: "none" };
-    }
-    if (["ribbon-wipe", "ribbon-match"].includes(type)) {
-      return { autoAlpha: 1, scale: 1, clipPath: "polygon(0 0, 30% 0, 68% 0, 100% 0, 100% 100%, 0 100%)", filter: "none" };
-    }
-    if (["void-push", "void-match"].includes(type)) {
-      return { autoAlpha: 1, scale: 1, clipPath: "circle(150% at 54% 47%)", filter: "none" };
-    }
+  enterEndState() {
     return { autoAlpha: 1, scale: 1, clipPath: "inset(0 0 0 0)", filter: "none" };
   },
 
@@ -1138,7 +1106,7 @@ const ScrollFramework = {
   timeline: null,
   trigger: null,
   currentIndex: 0,
-  segmentDuration: 1.12,
+  segmentDuration: 1,
 
   build() {
     gsap.registerPlugin(ScrollTrigger);
@@ -1150,12 +1118,11 @@ const ScrollFramework = {
   buildJourney() {
     const type = $(".hero-type");
     const drift = $(".sky-drift");
-    const flare = $(".transition-flare");
     const layers = SceneDeck.layers;
     const segment = this.segmentDuration;
     const distance = () => {
-      const pace = Env.mobile ? 0.78 : Env.tabletPortrait ? 0.88 : Env.tabletLandscape ? 0.96 : 1.08;
-      return Math.max(900, (experienceConfig.scenes.length - 1) * window.innerHeight * pace);
+      const pace = Env.mobile ? 0.88 : Env.tabletPortrait ? 1 : Env.tabletLandscape ? 1.05 : 1.15;
+      return experienceConfig.scenes.length * window.innerHeight * pace;
     };
 
     gsap.set(layers.slice(1), { clearProps: "transform,opacity,visibility,clipPath,filter" });
@@ -1187,9 +1154,11 @@ const ScrollFramework = {
       const caption = $(".scene-caption", layer);
       const life = $(".scene-life", layer);
       const camera = SceneDeck.cameraFor(scene);
-      const arriveDuration = segment * 0.22;
-      const readDuration = segment * 0.42;
-      const moveDuration = segment - arriveDuration - readDuration;
+      const arriveDuration = segment * 0.2;
+      const readDuration = segment * 0.45;
+      const moveDuration = segment * 0.2;
+      const transitionDuration = segment * 0.15;
+      const forwardCamera = camera.read.map((value, axis) => value + (camera.end[axis] - value) * 0.28);
 
       tl.addLabel(scene.id, at)
         .fromTo(
@@ -1213,9 +1182,9 @@ const ScrollFramework = {
         .to(
           media,
           {
-            scale: camera.read[0],
-            xPercent: camera.read[1],
-            yPercent: camera.read[2],
+            scale: Env.reducedMotion ? camera.read[0] : forwardCamera[0],
+            xPercent: Env.reducedMotion ? camera.read[1] : forwardCamera[1],
+            yPercent: Env.reducedMotion ? camera.read[2] : forwardCamera[2],
             duration: readDuration,
             ease: "none"
           },
@@ -1235,37 +1204,36 @@ const ScrollFramework = {
 
       if (index === 0) {
         tl.to(drift, { opacity: 0.2, duration: segment * 0.65 }, at)
-          .to(type, { yPercent: -22, opacity: 0, ease: "power1.in", duration: segment * 0.48 }, at + segment * 0.18)
+          .to(type, { opacity: 0, ease: "power1.in", duration: segment * 0.48 }, at + segment * 0.18)
           .to(document.documentElement, { "--scrim-strength": 0.62, "--vignette-strength": 0.46, duration: segment * 0.62 }, at + segment * 0.08)
           .to($(".hud__cue"), { opacity: 0, duration: segment * 0.14 }, at + segment * 0.04);
         return;
       }
 
       const previous = layers[index - 1];
-      const transitionAt = at - segment * 0.14;
-      const transitionDuration = Env.reducedMotion ? segment * 0.16 : segment * 0.34;
+      const transitionAt = at - transitionDuration;
       tl.fromTo(
         layer,
-        SceneDeck.enterState(scene.transition),
+        SceneDeck.enterState(),
         {
-          ...SceneDeck.enterEndState(scene.transition),
+          ...SceneDeck.enterEndState(),
           duration: transitionDuration,
-          ease: ["matched-push", "void-push", "void-match"].includes(scene.transition) ? "power2.out" : "power1.inOut",
+          ease: "power1.inOut",
           immediateRender: false
         },
         transitionAt
-      ).to(previous, { autoAlpha: 0, duration: segment * 0.22, ease: "power1.in" }, at + segment * 0.08);
+      ).to(previous, { autoAlpha: 0, duration: transitionDuration, ease: "power1.inOut" }, transitionAt);
 
       if (caption) {
         tl.fromTo(
           caption,
-          { opacity: 0, y: Env.reducedMotion ? 0 : 14 },
+          { opacity: 0, y: 0 },
           { opacity: 1, y: 0, duration: segment * 0.16, ease: "power2.out", immediateRender: false },
-          at + segment * 0.12
+          at + segment * 0.08
         ).to(
           caption,
-          { opacity: 0, y: Env.reducedMotion ? 0 : -6, duration: segment * 0.12, ease: "power1.in" },
-          at + segment * 0.52
+          { opacity: 0, y: 0, duration: segment * 0.08, ease: "power1.in" },
+          at + segment * 0.76
         );
       }
 
@@ -1295,14 +1263,6 @@ const ScrollFramework = {
         );
       }
 
-      if (["light-cut", "horizon-cut", "horizon-dissolve"].includes(scene.transition)) {
-        tl.fromTo(
-          flare,
-          { opacity: 0 },
-          { opacity: Env.reducedMotion ? 0 : 0.32, duration: segment * 0.12, yoyo: true, repeat: 1, ease: "sine.inOut" },
-          transitionAt + segment * 0.08
-        );
-      }
     });
 
     tl.call(() => {}, null, experienceConfig.scenes.length * segment);
@@ -1317,16 +1277,14 @@ const ScrollFramework = {
     const bar = $(".hud__progress-bar");
     const label = $(".hud__progress-label");
     const time = progress * this.timeline.duration();
-    const index = Math.max(
-      0,
-      Math.min(experienceConfig.scenes.length - 1, Math.floor((time + this.segmentDuration * 0.12) / this.segmentDuration))
-    );
-    gsap.set(bar, { scaleY: progress });
+    const index = Math.max(0, Math.min(experienceConfig.scenes.length - 1, Math.floor(time / this.segmentDuration)));
+    const sceneProgress = Math.max(0, Math.min(1, (time - index * this.segmentDuration) / this.segmentDuration));
+    gsap.set(bar, { scaleX: sceneProgress });
     if (index !== this.currentIndex) {
       this.currentIndex = index;
       SceneDeck.setActive(index);
     }
-    const nextLabel = `${String(index + 1).padStart(2, "0")} — ${experienceConfig.scenes[index].label}`;
+    const nextLabel = `${String(index + 1).padStart(2, "0")} / ${String(experienceConfig.scenes.length).padStart(2, "0")} — ${experienceConfig.scenes[index].label}`;
     if (label.textContent !== nextLabel) label.textContent = nextLabel;
   },
 
@@ -1335,7 +1293,7 @@ const ScrollFramework = {
     const scene = experienceConfig.scenes[index];
     if (!scene) return;
     const labelTime = this.timeline.labels[scene.id] || 0;
-    const time = Math.min(this.timeline.duration(), labelTime + (index ? this.segmentDuration * 0.28 : 0));
+    const time = Math.min(this.timeline.duration(), labelTime + (index ? this.segmentDuration * 0.3 : 0));
     const progress = time / this.timeline.duration();
     const top = this.trigger.start + (this.trigger.end - this.trigger.start) * progress;
     window.scrollTo({ top, behavior });

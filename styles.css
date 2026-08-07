@@ -370,41 +370,56 @@ a {
   visibility: hidden;
 }
 
-/* Deliberate cinema stages preserve the supplied compositions. The very quiet
-   image-derived field is an atmospheric extension, never a visible card/bar. */
-.cinema-layer[data-presentation$="-stage"]::before {
+/* Three layout modes: standard landscapes fill a minimally inset viewport,
+   panoramas preserve their width, and portraits sit over a derived field. */
+.cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+)::before {
   content: "";
   position: absolute;
   z-index: 0;
   inset: -2rem;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--scene-tone) 78%, #08090b 22%), rgba(8, 9, 11, 0.42)),
+    linear-gradient(180deg, rgba(8, 9, 11, 0.16), rgba(8, 9, 11, 0.54)),
     var(--scene-image) center / cover no-repeat;
-  opacity: 0.36;
-  filter: blur(18px) saturate(0.68) contrast(0.9);
+  opacity: 0.6;
+  filter: blur(12px) saturate(0.74) contrast(0.92);
   transform: scale(1.06);
 }
 
-.cinema-layer[data-presentation$="-stage"] .cinema-media {
-  inset: clamp(1.2rem, 3svh, 2.3rem) clamp(0.8rem, 2vw, 2rem);
+.cinema-layer[data-presentation="standard-landscape"] .cinema-media {
+  inset: clamp(1.5rem, 3vw, 3rem);
 }
 
-.cinema-layer[data-presentation$="-stage"] .cinema-media img {
+.cinema-layer[data-presentation="standard-landscape"] .cinema-media img {
+  object-fit: cover;
+  object-position: var(--scene-focus, 50% 50%);
+}
+
+.cinema-layer[data-presentation="wide-cinematic"] .cinema-media {
+  inset: clamp(1.5rem, 3vw, 3rem) clamp(0.75rem, 1.7vw, 1.7rem);
+}
+
+.cinema-layer[data-presentation="wide-cinematic"] .cinema-media img,
+.cinema-layer[data-presentation="portrait"] .cinema-media img {
   object-fit: contain;
   object-position: var(--scene-focus, 50% 50%);
 }
 
-.cinema-layer[data-presentation="wide-stage"] .cinema-media {
-  inset: clamp(3.4rem, 8svh, 6rem) clamp(0.55rem, 1.7vw, 1.7rem) clamp(5rem, 13svh, 8.5rem);
+.cinema-layer[data-presentation="portrait"] .cinema-media {
+  inset: -4svh 0;
 }
 
-.cinema-layer[data-presentation="portrait-stage"] .cinema-media {
-  inset: clamp(1.2rem, 2.5svh, 2rem) clamp(0.8rem, 2vw, 2rem);
+.cinema-layer[data-presentation="portrait"]::before {
+  opacity: 0.76;
+  filter: blur(16px) saturate(0.66) contrast(0.88);
 }
 
-.cinema-layer[data-presentation="portrait-stage"]::after {
+.cinema-layer[data-presentation="portrait"]::after {
   background:
-    linear-gradient(90deg, rgba(8, 9, 11, 0.74) 0%, rgba(8, 9, 11, 0.28) 36%, transparent 64%),
+    linear-gradient(90deg, rgba(8, 9, 11, 0.62) 0%, rgba(8, 9, 11, 0.2) 36%, transparent 64%),
     linear-gradient(0deg, rgba(8, 9, 11, 0.46), transparent 40%);
 }
 
@@ -902,20 +917,21 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 /* Scene progress — reads as a measured architectural scale, not a scrollbar. */
 .hud__progress {
   position: absolute;
-  top: 50%;
-  right: calc(var(--edge) - 0.35rem);
-  transform: translateY(-50%);
+  top: var(--safe-top);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  writing-mode: vertical-rl;
+  gap: 0.75rem;
+  writing-mode: horizontal-tb;
   opacity: 0;
 }
 
 .hud__progress-track {
   position: relative;
-  width: 1px;
-  height: clamp(90px, 16vh, 150px);
+  width: clamp(64px, 7vw, 104px);
+  height: 1px;
   background: rgba(239, 233, 223, 0.18);
 }
 
@@ -923,8 +939,8 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   position: absolute;
   inset: 0;
   background: var(--haze);
-  transform: scaleY(0);
-  transform-origin: 50% 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
 }
 
 .hud__progress-label {
@@ -1062,6 +1078,14 @@ html[data-viewport="tabletLandscape"] .scene-caption h2 {
   font-size: clamp(1.5rem, 2.8vw, 2rem);
 }
 
+html[data-viewport="tabletLandscape"] .cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+) .cinema-media {
+  inset: 24px;
+}
+
 html[data-viewport="tabletLandscape"] .scene-caption[data-vertical="top"] {
   top: clamp(5.1rem, 10svh, 7rem);
   bottom: auto;
@@ -1100,11 +1124,12 @@ html[data-viewport="tabletPortrait"] .hud__progress {
   right: auto;
   transform: none;
   writing-mode: horizontal-tb;
-  gap: 0;
+  gap: 0.6rem;
 }
 
 html[data-viewport="tabletPortrait"] .hud__progress-track {
-  display: none;
+  display: block;
+  width: 72px;
 }
 
 html[data-viewport="tabletPortrait"] .hero-type {
@@ -1172,7 +1197,34 @@ html[data-viewport="tabletPortrait"] .cinema-layer::after {
     linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 47%);
 }
 
-html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-stage"]::after {
+html[data-viewport="tabletPortrait"] .cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+) .cinema-media {
+  inset: 18px;
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="standard-landscape"] .cinema-media img {
+  position: relative;
+  left: -4vw;
+  width: 108vw;
+  object-fit: contain;
+  object-position: 50% 35%;
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-cinematic"] .cinema-media img {
+  position: relative;
+  left: -6vw;
+  width: 112vw;
+  object-position: 50% 35%;
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="portrait"] .cinema-media {
+  inset: -3svh 0;
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-cinematic"]::after {
   background: linear-gradient(0deg, rgba(8, 9, 11, 0.9), transparent 54%);
 }
 
@@ -1234,11 +1286,19 @@ html[data-viewport="mobile"] .hud__progress {
   right: auto;
   transform: none;
   writing-mode: horizontal-tb;
-  gap: 0;
+  gap: 0.5rem;
 }
 
 html[data-viewport="mobile"] .hud__progress-track {
-  display: none;
+  display: block;
+  width: 54px;
+}
+
+html[data-viewport="mobile"] .hud__progress-label {
+  max-width: 52vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 html[data-viewport="mobile"] .hud__menu {
@@ -1301,8 +1361,8 @@ html[data-viewport="mobile"] .hud__cue-line::after {
 html[data-viewport="mobile"] .scene-caption {
   left: var(--safe-left);
   right: auto;
-  top: 58svh;
-  bottom: auto;
+  top: auto;
+  bottom: clamp(5.4rem, 11svh, 6.4rem);
   width: min(87vw, 22rem);
   text-align: left;
 }
@@ -1334,23 +1394,47 @@ html[data-viewport="mobile"] .cinema-layer::after {
     linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 50%);
 }
 
-html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"] .cinema-media {
-  top: 9svh;
-  right: 0;
-  bottom: auto;
-  left: 0;
-  height: 45svh;
+html[data-viewport="mobile"] .cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+) .cinema-media {
+  inset: 0;
 }
 
-html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"]::before {
-  opacity: 0.3;
-  filter: blur(14px) saturate(0.64) contrast(0.88);
+html[data-viewport="mobile"] .cinema-layer[data-presentation="standard-landscape"] .cinema-media img,
+html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-cinematic"] .cinema-media img {
+  position: relative;
+  left: -6vw;
+  width: 112vw;
+  object-fit: contain;
 }
 
-html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"]::after {
+html[data-viewport="mobile"] .cinema-layer[data-presentation="standard-landscape"] .cinema-media img {
+  object-position: 50% 25%;
+}
+
+html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-cinematic"] .cinema-media img {
+  object-position: 50% 30%;
+}
+
+html[data-viewport="mobile"] .cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+)::before {
+  opacity: 0.66;
+  filter: blur(10px) saturate(0.72) contrast(0.9);
+}
+
+html[data-viewport="mobile"] .cinema-layer:is(
+  [data-presentation="standard-landscape"],
+  [data-presentation="wide-cinematic"],
+  [data-presentation="portrait"]
+)::after {
   background:
     linear-gradient(180deg, rgba(8, 9, 11, 0.18), transparent 27%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.92), transparent 62%);
+    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 58%);
 }
 
 html[data-viewport="mobile"] .signature {
