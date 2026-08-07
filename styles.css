@@ -1,0 +1,886 @@
+/* ==========================================================================
+   BENGHAZI TOWER — A NEW WAY OF LIVING
+   styles.css
+
+   Palette is sampled from the supplied exterior render only:
+   deep black (space / cinematic edge), warm off-white (sunlit concrete),
+   muted stone, controlled grey (infrastructure), pale sky, dawn warmth
+   off the water. No accent colour is introduced that is not already
+   present in the render.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Colour */
+  --ink: #08090b;
+  --ink-soft: #101215;
+  --haze: #efe9df;
+  --stone: #c6bcae;
+  --grey: #8b8d90;
+  --sky-high: #b3c1cb;
+  --sky-low: #e5d7c5;
+  --sun: #f7efe2;
+
+  /* Type */
+  --font-display: "Cormorant Garamond", "Times New Roman", Times, serif;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --ui-size: 0.6875rem;
+  --ui-tracking: 0.24em;
+
+  /* Layout */
+  --edge: clamp(1.25rem, 4vw, 3.75rem);
+  --hairline: rgba(239, 233, 223, 0.28);
+
+  /* Hero framing — every positional decision for the render lives here.
+     Change these, not the markup, to re-frame the tower. */
+  --hero-object-position: 52% 46%;
+  --hero-object-fit: cover;
+  --hero-scale: 1;
+  --hero-shift-y: 0px;
+
+  /* Atmosphere band placement, expressed against the render's own horizon */
+  --horizon-y: 14%;
+  --sky-band-top: 0%;
+  --sky-band-bottom: 34%;
+
+  /* Driven by JS */
+  --scrim-strength: 0.42;
+  --vignette-strength: 0.28;
+
+  --ease-cine: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset / base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--haze);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* No scrolling until the opening sequence has handed control to the user. */
+body[data-state="loading"],
+body[data-state="intro"] {
+  overflow: hidden;
+  height: 100%;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--haze);
+  outline-offset: 6px;
+}
+
+.u-label {
+  font-family: var(--font-ui);
+  font-size: var(--ui-size);
+  font-weight: 400;
+  letter-spacing: var(--ui-tracking);
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. Loader
+   -------------------------------------------------------------------------- */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  background: var(--ink);
+}
+
+.loader__mark {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--stone);
+  opacity: 0.85;
+  padding-left: 0.42em; /* optical compensation for the tracking */
+}
+
+.loader__track {
+  position: relative;
+  width: min(240px, 46vw);
+  height: 1px;
+  background: rgba(239, 233, 223, 0.16);
+  overflow: hidden;
+}
+
+.loader__bar {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: var(--haze);
+}
+
+.loader__meta {
+  display: flex;
+  gap: 1.5rem;
+  width: min(240px, 46vw);
+  align-items: baseline;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+.loader__status {
+  color: var(--grey);
+}
+
+.loader__ask {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.loader__ask[hidden] {
+  display: none;
+}
+
+.loader__pick {
+  padding: 0.7rem 1.5rem;
+  border: 1px solid var(--hairline);
+  color: var(--haze);
+  cursor: pointer;
+  transition: border-color 0.4s var(--ease-cine), background-color 0.4s var(--ease-cine);
+}
+
+.loader__pick:hover,
+.loader__pick:focus-within {
+  border-color: var(--haze);
+  background: rgba(239, 233, 223, 0.06);
+}
+
+.loader__continue {
+  color: rgba(139, 141, 144, 0.9);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.loader__continue:hover {
+  color: var(--stone);
+}
+
+/* --------------------------------------------------------------------------
+   4. Cloud fly-through + haze
+   -------------------------------------------------------------------------- */
+
+/* The plates are cut from the render's own atmosphere — the fog bank in the
+   lower frame, the mist over the sea, the cloud band on the horizon. Same sun,
+   same colour temperature, same grain. See assets/atmosphere/README.md. */
+
+.flythrough {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cloud {
+  position: absolute;
+  /* oversized so scaling never reveals an edge */
+  inset: -55%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.cloud--far {
+  background-image: url("assets/atmosphere/cloud-far.webp");
+}
+
+.cloud--mid {
+  background-image: url("assets/atmosphere/cloud-mid.webp");
+}
+
+.cloud--near-a,
+.cloud--near-b {
+  background-image: url("assets/atmosphere/cloud-near.webp");
+}
+
+.cloud--near-b {
+  transform: scaleX(-1);
+}
+
+/* The whiteout the sequence begins inside. Its colour is sampled from the
+   render's own upper sky at load time. */
+.haze {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  background: rgb(var(--haze-tint, 222, 213, 204));
+}
+
+/* --------------------------------------------------------------------------
+   5. Scenes
+   -------------------------------------------------------------------------- */
+
+.experience {
+  position: relative;
+  z-index: 10;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+}
+
+.scene--hero {
+  height: 100vh;
+  height: 100svh;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+/* Empty containers reserved for the walkthrough. They hold no design yet. */
+.scene--reserved {
+  height: 60svh;
+  background: var(--ink);
+}
+
+.scene__reserved-note {
+  position: absolute;
+  left: var(--edge);
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(139, 141, 144, 0.55);
+  display: none;
+}
+
+body[data-debug="true"] .scene__reserved-note {
+  display: block;
+}
+
+/* --- hero stage ---------------------------------------------------------- */
+
+.hero-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.hero-reveal {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  transform: translate3d(0, var(--hero-shift-y), 0) scale(var(--hero-scale));
+}
+
+/* An <img> with no src yet must never flash its alt text. */
+.hero-media__img:not([src]),
+.sky-drift:not([src]) {
+  visibility: hidden;
+}
+
+.hero-media__img {
+  width: 100%;
+  height: 100%;
+  object-fit: var(--hero-object-fit);
+  object-position: var(--hero-object-position);
+}
+
+/* Fallback sky used only if the render cannot be loaded. It never pretends to
+   be the architecture — it is a plain dawn field so the page stays coherent. */
+.hero-fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background:
+    radial-gradient(120% 80% at 8% 8%, rgba(247, 239, 226, 0.9) 0%, rgba(247, 239, 226, 0) 48%),
+    linear-gradient(180deg, #c9d3da 0%, #e1dbd1 46%, #e5d7c5 72%, #bdb5ab 100%);
+}
+
+body[data-hero="missing"] .hero-fallback {
+  display: block;
+}
+
+.hero-missing {
+  /* Only ever sits over the light fallback sky, so it is set in ink. */
+  position: absolute;
+  left: var(--edge);
+  top: clamp(6rem, 22%, 14rem);
+  z-index: 6;
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  max-width: 34ch;
+  color: var(--ink);
+}
+
+.hero-missing .u-label {
+  color: rgba(8, 9, 11, 0.66);
+}
+
+body[data-hero="missing"][data-state="ready"] .hero-missing {
+  display: flex;
+}
+
+.hero-missing__pick {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid rgba(8, 9, 11, 0.3);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.4s var(--ease-cine), background-color 0.4s var(--ease-cine);
+}
+
+.hero-missing__pick:hover,
+.hero-missing__pick:focus-within {
+  border-color: var(--ink);
+  background: rgba(8, 9, 11, 0.06);
+}
+
+/* --- atmosphere ----------------------------------------------------------
+   No procedural clouds. The moving sky IS the render's own sky: a second copy
+   of the same image, masked to the band above the architecture, drifting a
+   fraction of a percent against the original. Its lighting, colour, horizon
+   and grain match by definition, and the building never moves.
+   -------------------------------------------------------------------------- */
+
+.sky-drift {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: var(--hero-object-fit);
+  object-position: var(--hero-object-position);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  transform: scale(1.035);
+  /* Two masks: a horizontal band above the architecture, and a fade that stops
+     before the city skyline on the right so no building is ever doubled. */
+  mask-image:
+    linear-gradient(180deg, #000 0%, #000 var(--sky-mask-end, 8%), rgba(0, 0, 0, 0) var(--sky-mask-fade, 20%)),
+    linear-gradient(90deg, #000 0%, #000 46%, rgba(0, 0, 0, 0) 66%);
+  -webkit-mask-image:
+    linear-gradient(180deg, #000 0%, #000 var(--sky-mask-end, 8%), rgba(0, 0, 0, 0) var(--sky-mask-fade, 20%)),
+    linear-gradient(90deg, #000 0%, #000 46%, rgba(0, 0, 0, 0) 66%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* One resting wisp of the same cloud material, masked to the sky band and
+   drifting almost imperceptibly. */
+.mist-rest {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background-image: url("assets/atmosphere/cloud-mid.webp");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 200% auto;
+  will-change: transform;
+  mask-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 2%, #000 14%, #000 26%, rgba(0, 0, 0, 0) 40%),
+    linear-gradient(90deg, #000 0%, #000 40%, rgba(0, 0, 0, 0) 62%);
+  -webkit-mask-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 2%, #000 14%, #000 26%, rgba(0, 0, 0, 0) 40%),
+    linear-gradient(90deg, #000 0%, #000 40%, rgba(0, 0, 0, 0) 62%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* A single, extremely slow luminance breath over the sky. No hue movement,
+   no shapes. */
+.sky-breath {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  background: radial-gradient(90% 55% at 10% 4%, rgba(247, 239, 226, 0.8) 0%, rgba(247, 239, 226, 0) 62%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 24%, rgba(0, 0, 0, 0) 46%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 24%, rgba(0, 0, 0, 0) 46%);
+}
+
+/* --- bird -----------------------------------------------------------------
+   Empty by default. Populated at runtime with a transparent WebM or a frame
+   sequence; removed entirely if neither is present.
+   -------------------------------------------------------------------------- */
+
+.bird {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(120px, 14vw, 220px);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, filter, opacity;
+}
+
+.bird__media {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* --- cinematic edges ----------------------------------------------------- */
+
+.hero-edge {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.6)) 0%,
+    rgba(8, 9, 11, 0) 24%,
+    rgba(8, 9, 11, 0) 40%,
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.5)) 68%,
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 1.5)) 100%
+  );
+}
+
+.hero-edge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 clamp(90px, 16vw, 240px) rgba(8, 9, 11, var(--vignette-strength));
+}
+
+/* --------------------------------------------------------------------------
+   6. Hero typography
+   -------------------------------------------------------------------------- */
+
+.hero-type {
+  position: absolute;
+  left: var(--edge);
+  right: var(--edge);
+  max-width: 62%;
+  bottom: clamp(3.5rem, 9vh, 7rem);
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.hero-type__rule {
+  width: 100%;
+  max-width: 46ch;
+  height: 1px;
+  margin-bottom: 1.35rem;
+  background: var(--hairline);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.hero-type__place {
+  display: block;
+  opacity: 0;
+  margin-bottom: clamp(0.9rem, 2vh, 1.4rem);
+  color: rgba(239, 233, 223, 0.72);
+}
+
+.hero-type__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 7.6vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--haze);
+}
+
+.hero-type__title .line {
+  display: block;
+  overflow: hidden;
+}
+
+.hero-type__title .line > span {
+  display: block;
+  transform: translateY(110%);
+}
+
+.hero-type__subtitle {
+  margin: clamp(0.7rem, 1.8vh, 1.2rem) 0 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.05rem, 2.6vw, 1.95rem);
+  letter-spacing: 0.015em;
+  color: rgba(239, 233, 223, 0.86);
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   7. Interface
+   -------------------------------------------------------------------------- */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.hud__wordmark,
+.hud__menu,
+.hud__cue,
+.hud__progress,
+.hud__sound {
+  pointer-events: auto;
+}
+
+.hud__wordmark {
+  position: absolute;
+  top: var(--edge);
+  left: var(--edge);
+  color: rgba(239, 233, 223, 0.82);
+}
+
+.hud__menu {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: rgba(239, 233, 223, 0.82);
+}
+
+.hud__menu-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+}
+
+.hud__menu-glyph i {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  transition: transform 0.5s var(--ease-cine);
+}
+
+.hud__menu:hover .hud__menu-glyph i:first-child {
+  transform: translateX(-4px);
+}
+
+/* Scroll cue — a hairline that draws downward, not a button. */
+.hud__cue {
+  position: absolute;
+  right: var(--edge);
+  bottom: clamp(3.5rem, 9vh, 7rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.85rem;
+  opacity: 0;
+  color: rgba(239, 233, 223, 0.75);
+  background: none;
+}
+
+.hud__cue-line {
+  position: relative;
+  width: 1px;
+  height: 62px;
+  background: rgba(239, 233, 223, 0.2);
+  overflow: hidden;
+}
+
+.hud__cue-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 22px;
+  background: var(--haze);
+  animation: cue-travel 2.6s var(--ease-cine) infinite;
+}
+
+@keyframes cue-travel {
+  0% { transform: translateY(-100%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(300%); opacity: 0; }
+}
+
+/* Scene progress — reads as a measured architectural scale, not a scrollbar. */
+.hud__progress {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--edge) - 0.35rem);
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  writing-mode: vertical-rl;
+  opacity: 0;
+}
+
+.hud__progress-track {
+  position: relative;
+  width: 1px;
+  height: clamp(90px, 16vh, 150px);
+  background: rgba(239, 233, 223, 0.18);
+}
+
+.hud__progress-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--haze);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+}
+
+.hud__progress-label {
+  font-variant-numeric: tabular-nums;
+  color: rgba(198, 188, 174, 0.85);
+}
+
+/* Development marker — delete the element and this block to remove. */
+.dev-marker {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(2rem, 6vh, 4rem);
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0;
+  color: rgba(239, 233, 223, 0.6);
+  white-space: nowrap;
+}
+
+.dev-marker::before,
+.dev-marker::after {
+  content: "";
+  width: clamp(24px, 6vw, 70px);
+  height: 1px;
+  background: rgba(239, 233, 223, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   8. Menu overlay
+   -------------------------------------------------------------------------- */
+
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--edge);
+  background: rgba(8, 9, 11, 0.97);
+  visibility: hidden;
+  opacity: 0;
+  /* visibility flips instantly on open so the first link is focusable at once */
+  transition: opacity 0.6s var(--ease-cine), visibility 0s linear 0.6s;
+}
+
+.menu[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.6s var(--ease-cine), visibility 0s linear 0s;
+}
+
+.menu__close {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  color: rgba(239, 233, 223, 0.8);
+}
+
+.menu__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: menu;
+}
+
+.menu__item {
+  border-bottom: 1px solid rgba(239, 233, 223, 0.1);
+}
+
+.menu__link {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(1rem, 4vw, 3rem);
+  padding: clamp(0.6rem, 2.2vh, 1.3rem) 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 6vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: rgba(239, 233, 223, 0.72);
+  transition: color 0.4s var(--ease-cine), transform 0.6s var(--ease-cine);
+}
+
+.menu__link:hover,
+.menu__link:focus-visible {
+  color: var(--haze);
+  transform: translateX(clamp(6px, 1.4vw, 18px));
+}
+
+.menu__index {
+  font-family: var(--font-ui);
+  font-size: var(--ui-size);
+  letter-spacing: var(--ui-tracking);
+  color: var(--grey);
+}
+
+.menu__foot {
+  margin-top: clamp(2rem, 6vh, 4rem);
+  color: var(--grey);
+}
+
+/* --------------------------------------------------------------------------
+   9. Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  :root {
+    --ui-tracking: 0.2em;
+    /* Keep the tower centred and whole on portrait crops. */
+    --hero-object-position: 56% 44%;
+    --horizon-y: 18%;
+    --sky-band-bottom: 30%;
+  }
+
+  .hud__progress {
+    display: none;
+  }
+
+  .hero-type {
+    bottom: clamp(4.5rem, 12vh, 7rem);
+    max-width: 100%;
+  }
+
+  .hero-type__title {
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --hero-object-position: 58% 42%;
+  }
+
+  .hud__cue {
+    left: var(--edge);
+    right: auto;
+    align-items: flex-start;
+  }
+
+  .hero-type {
+    bottom: clamp(6rem, 16vh, 9rem);
+  }
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .hero-type__title {
+    font-size: clamp(2.6rem, 13vw, 4.6rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__cue-line::after {
+    animation: none;
+    height: 100%;
+    opacity: 0.5;
+  }
+
+  .menu,
+  .menu__link,
+  .hud__menu-glyph i {
+    transition-duration: 0.001s;
+  }
+}

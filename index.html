@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Benghazi Tower — A New Way of Living</title>
+<meta name="description" content="Benghazi Tower, a mixed-use waterfront tower on the Mediterranean coast of Benghazi, Libya.">
+<meta name="theme-color" content="#08090b">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2308090b'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-state="loading">
+
+<!-- ── Loading ───────────────────────────────────────────────────────────── -->
+<div class="loader" id="loader" role="status" aria-live="polite">
+  <p class="loader__mark">Benghazi Tower</p>
+  <div class="loader__track"><span class="loader__bar" id="loader-bar"></span></div>
+  <div class="loader__meta u-label">
+    <span class="loader__status" id="loader-status">Preparing the approach</span>
+    <span id="loader-value">000</span>
+  </div>
+
+  <!-- Shown only if the render is not on disk. The opening is built around
+       one specific image; it asks for that image rather than inventing one. -->
+  <div class="loader__ask" id="loader-ask" hidden>
+    <label class="loader__pick u-label">
+      Select the render
+      <input type="file" accept="image/*" id="hero-picker" class="u-visually-hidden">
+    </label>
+    <button class="loader__continue u-label" id="loader-skip" type="button">Continue without it</button>
+  </div>
+</div>
+
+<!-- ── Opening: inside the cloud layer. Nothing else is on screen. ───────── -->
+<div class="flythrough" id="flythrough" aria-hidden="true">
+  <div class="cloud cloud--far"></div>
+  <div class="cloud cloud--mid"></div>
+  <div class="cloud cloud--near-a"></div>
+  <div class="cloud cloud--near-b"></div>
+</div>
+<div class="haze" id="haze" aria-hidden="true"></div>
+
+<!-- ── Experience ────────────────────────────────────────────────────────── -->
+<main class="experience" id="experience">
+
+  <!-- Scene 01 — arrival + exterior approach -->
+  <section class="scene scene--hero" id="scene-hero" data-scene="heroArrival" aria-labelledby="project-title">
+
+    <div class="hero-stage">
+      <div class="hero-fallback" aria-hidden="true"></div>
+
+      <!-- masked so the sky of the render resolves before the land -->
+      <div class="hero-reveal">
+        <div class="hero-media">
+          <img
+            class="hero-media__img js-hero-src"
+            id="hero-image"
+            alt="Aerial view of Benghazi Tower at sunrise: a curved white tower rising from a sculpted podium on the Benghazi waterfront, with the Mediterranean to the west and coastal interchanges below."
+            decoding="async"
+            fetchpriority="high">
+
+          <!-- The resting atmosphere is this render's own sky, drifting against
+               itself. Masked to the sky band, so the architecture never moves. -->
+          <img class="sky-drift js-hero-src" alt="" aria-hidden="true" decoding="async">
+
+          <div class="mist-rest" aria-hidden="true"></div>
+          <div class="sky-breath" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- Bird slot. Filled at runtime from a transparent WebM or a frame
+           sequence; if neither exists it is removed, never faked.
+           See assets/atmosphere/README.md -->
+      <div class="bird" id="bird" aria-hidden="true"></div>
+
+      <div class="hero-edge" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero-type">
+      <span class="hero-type__rule" aria-hidden="true"></span>
+      <span class="hero-type__place u-label">Benghazi, Libya</span>
+      <h1 class="hero-type__title" id="project-title">
+        <span class="line"><span>Benghazi</span></span>
+        <span class="line"><span>Tower</span></span>
+      </h1>
+      <p class="hero-type__subtitle">A new way of living</p>
+    </div>
+
+    <!-- DEV ONLY — remove this element and the .dev-marker rules in styles.css -->
+    <p class="dev-marker u-label" data-dev="true">Next scene — Exterior approach</p>
+  </section>
+
+  <!-- Reserved containers. No content until the walkthrough is designed. -->
+  <section class="scene scene--reserved" id="scene-future-01" data-scene="futureScene01" aria-hidden="true">
+    <p class="scene__reserved-note u-label">futureScene01 — podium arrival</p>
+  </section>
+
+  <section class="scene scene--reserved" id="scene-future-02" data-scene="futureScene02" aria-hidden="true">
+    <p class="scene__reserved-note u-label">futureScene02 — lobby</p>
+  </section>
+
+</main>
+
+<!-- ── Interface — revealed only after the camera arrives ─────────────────── -->
+<div class="hud">
+  <p class="hud__wordmark u-label">Benghazi Tower</p>
+
+  <button class="hud__menu u-label" id="menu-trigger" type="button" aria-expanded="false" aria-controls="menu">
+    <span>Menu</span>
+    <span class="hud__menu-glyph" aria-hidden="true"><i></i><i></i></span>
+  </button>
+
+  <button class="hud__cue u-label" type="button" aria-label="Scroll to enter the project">
+    <span class="hud__cue-line" aria-hidden="true"></span>
+    <span>Scroll to enter</span>
+  </button>
+
+  <div class="hud__progress" aria-hidden="true">
+    <span class="hud__progress-label u-label">01 — ARRIVAL</span>
+    <span class="hud__progress-track"><span class="hud__progress-bar"></span></span>
+  </div>
+</div>
+
+<!-- ── Menu ──────────────────────────────────────────────────────────────── -->
+<nav class="menu" id="menu" data-open="false" aria-hidden="true" aria-label="Project sections">
+  <button class="menu__close u-label" id="menu-close" type="button">Close</button>
+  <ul class="menu__list">
+    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">01</span>Project</a></li>
+    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">02</span>Architecture</a></li>
+    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">03</span>Experience</a></li>
+    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">04</span>Location</a></li>
+    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">05</span>Credits</a></li>
+  </ul>
+  <p class="menu__foot u-label">Benghazi, Libya</p>
+</nav>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script defer src="script.js"></script>
+</body>
+</html>
