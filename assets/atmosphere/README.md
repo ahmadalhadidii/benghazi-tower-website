@@ -23,8 +23,8 @@ duplicating architectural geometry. Phones omit the foreground zone.
 ## Bird
 
 `mediterranean-gull.webp` is an alpha photographic gull named in
-`atmosphere.json`. The one-time flight begins 0.9 seconds after the camera
-settles, stays in the upper sky, accelerates right-to-left, scales toward the
+`atmosphere.json`. The one-time flight begins 0.38 seconds after the arrival
+beat, stays in the upper sky, accelerates right-to-left, scales toward the
 lens, and defocuses before leaving the frame.
 
 The runtime also supports a transparent WebM or a WebP/PNG frame sequence. To

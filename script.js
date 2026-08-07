@@ -19,7 +19,7 @@
 
 const experienceConfig = {
   /* Opening — an aerial descent through the cloud layer */
-  introDuration: 4.75,           // concise first-load arrival, including the interface reveal
+  introDuration: 4.52,           // concise first-load arrival, including the interface reveal
   descentStartScale: 1.14,       // wider/higher opening frame keeps upper atmosphere present
   descentBlur: 10,               // restrained; cloud depth comes from plates, not blur
   descentBlurMobile: 0,          // full-frame blur is too costly on phones
@@ -703,16 +703,16 @@ const Bird = {
        crops put the tower mid-frame, so they get a higher, shorter route. */
     const route = Env.mobile
       ? [
-          { x: 0.98, y: 0.12, s: 0.48, d: 0.42 },
-          { x: 0.6, y: 0.14, s: 0.78, d: 0.42 },
-          { x: 0.18, y: 0.2, s: 1.12, d: 0.45 },
-          { x: -0.3, y: 0.3, s: 1.45, d: 0.4 }
+          { x: 0.86, y: 0.01, s: 0.42, d: 0.24 },
+          { x: 0.52, y: 0.015, s: 0.62, d: 0.34 },
+          { x: 0.15, y: 0.12, s: 1.08, d: 0.4 },
+          { x: -0.3, y: 0.28, s: 1.42, d: 0.35 }
         ]
       : [
-          { x: 1.02, y: 0.11, s: 0.5, d: 0.48 },
-          { x: 0.62, y: 0.14, s: 0.85, d: 0.48 },
-          { x: 0.2, y: 0.22, s: 1.35, d: 0.52 },
-          { x: -0.28, y: 0.34, s: 1.9, d: 0.46 }
+          { x: 0.84, y: -0.02, s: 0.44, d: 0.26 },
+          { x: 0.52, y: -0.025, s: 0.62, d: 0.4 },
+          { x: 0.14, y: 0.11, s: 1.18, d: 0.44 },
+          { x: -0.28, y: 0.27, s: 1.72, d: 0.4 }
         ];
 
     this.tl = gsap
@@ -740,8 +740,8 @@ const Bird = {
         },
         0
       )
-      .to(blur, { v: 2.2 * scaleFactor, duration: 0.58, ease: "power2.in", onUpdate: applyBlur }, 1.15)
-      .to(this.el, { opacity: 0, duration: 0.3, ease: "power2.in" }, 1.65);
+      .to(blur, { v: 2.2 * scaleFactor, duration: 0.45, ease: "power2.in", onUpdate: applyBlur }, 0.8)
+      .to(this.el, { opacity: 0, duration: 0.26, ease: "power2.in" }, 1.18);
   },
 
   drawSequence() {
@@ -1022,7 +1022,7 @@ const Intro = {
       .call(() => Atmosphere.start(), null, 2.95);
 
     /* Only once the frame has settled. */
-    this.appendReveal(tl, 3.42);
+    this.appendReveal(tl, 3.18);
     this.tl = tl;
     return tl;
   },
@@ -1045,7 +1045,7 @@ const Intro = {
       .addLabel("arrival", 3.52)
       .call(() => Atmosphere.start(), null, 2.75);
 
-    this.appendReveal(tl, 3.28);
+    this.appendReveal(tl, 3.1);
     this.tl = tl;
     return tl;
   },
