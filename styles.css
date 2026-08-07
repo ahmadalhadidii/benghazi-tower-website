@@ -98,6 +98,14 @@ body[data-state="intro"] {
   height: 100%;
 }
 
+body[data-state="ready"] {
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  touch-action: none;
+}
+
 img {
   display: block;
   max-width: 100%;
@@ -265,23 +273,70 @@ a {
 
 .cloud--far {
   inset: -8%;
-  background-image: url("assets/atmosphere/cloud-far-v2.webp");
+  background-image: var(--cloud-far-image, url("assets/atmosphere/cloud-far-v2.webp"));
 }
 
 .cloud--mid {
   inset: -12%;
-  background-image: url("assets/atmosphere/cloud-mid-v2.webp");
+  background-image: var(--cloud-mid-image, url("assets/atmosphere/cloud-mid-v2.webp"));
 }
 
 .cloud--near {
   inset: -18%;
-  background-image: url("assets/atmosphere/cloud-near-v2.webp");
+  background-image: var(--cloud-near-image, url("assets/atmosphere/cloud-near-v2.webp"));
 }
 
 .cloud--foreground {
   inset: -30%;
-  background-image: url("assets/atmosphere/cloud-near-v2.webp");
+  background-image: var(--cloud-near-image, url("assets/atmosphere/cloud-near-v2.webp"));
   background-position: 74% 42%;
+}
+
+/* Select compact plates at CSS parse time, before application JavaScript runs. */
+@media (min-width: 601px) and (max-width: 1200px) {
+  :root {
+    --cloud-far-image: url("assets/atmosphere/cloud-far-tablet.webp");
+    --cloud-mid-image: url("assets/atmosphere/cloud-mid-tablet.webp");
+    --cloud-near-image: url("assets/atmosphere/cloud-mid-tablet.webp");
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --cloud-far-image: url("assets/atmosphere/cloud-far-mobile.webp");
+    --cloud-mid-image: url("assets/atmosphere/cloud-mid-mobile.webp");
+    --cloud-near-image: url("assets/atmosphere/cloud-mid-mobile.webp");
+  }
+}
+
+/* High-pixel portrait tablets use the same one-plate fallback selected by JS. */
+@media (min-width: 801px) and (max-width: 900px) and (min-height: 1100px) {
+  .cloud--far,
+  .cloud--near,
+  .cloud--foreground,
+  .hero-mist--coast,
+  .hero-mist--foreground {
+    display: none;
+  }
+}
+
+html[data-intro-mode="lite"] {
+  --cloud-far-image: url("assets/atmosphere/cloud-far-mobile.webp");
+}
+
+html[data-viewport="tabletLandscape"] .cloud--near,
+html[data-viewport="tabletLandscape"] .cloud--foreground,
+html[data-viewport="tabletPortrait"] .cloud--near,
+html[data-viewport="tabletPortrait"] .cloud--foreground,
+html[data-viewport="mobile"] .cloud--near,
+html[data-viewport="mobile"] .cloud--foreground,
+html[data-intro-mode="tabletLite"] .cloud--far,
+html[data-intro-mode="tabletLite"] .cloud--near,
+html[data-intro-mode="tabletLite"] .cloud--foreground,
+html[data-intro-mode="lite"] .cloud--mid,
+html[data-intro-mode="lite"] .cloud--near,
+html[data-intro-mode="lite"] .cloud--foreground {
+  display: none;
 }
 
 /* The whiteout the sequence begins inside. Its colour is sampled from the
@@ -300,13 +355,18 @@ a {
    -------------------------------------------------------------------------- */
 
 .experience {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 10;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
 }
 
 .scene {
   position: relative;
-  width: 100%;
+  width: 100vw;
 }
 
 .scene--hero {
@@ -370,8 +430,8 @@ a {
   visibility: hidden;
 }
 
-/* Three layout modes: standard landscapes fill a minimally inset viewport,
-   panoramas preserve their width, and portraits sit over a derived field. */
+/* Every scene field is edge-to-edge. Wide and portrait renders retain their
+   proportion over a soft image-derived field; no viewport frame is added. */
 .cinema-layer:is(
   [data-presentation="standard-landscape"],
   [data-presentation="wide-cinematic"],
@@ -381,16 +441,14 @@ a {
   position: absolute;
   z-index: 0;
   inset: -2rem;
-  background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.16), rgba(8, 9, 11, 0.54)),
-    var(--scene-image) center / cover no-repeat;
-  opacity: 0.6;
-  filter: blur(12px) saturate(0.74) contrast(0.92);
+  background: var(--scene-image) center / cover no-repeat;
+  opacity: 0.72;
+  filter: blur(12px) saturate(0.82) contrast(0.94);
   transform: scale(1.06);
 }
 
 .cinema-layer[data-presentation="standard-landscape"] .cinema-media {
-  inset: clamp(1.5rem, 3vw, 3rem);
+  inset: 0;
 }
 
 .cinema-layer[data-presentation="standard-landscape"] .cinema-media img {
@@ -399,7 +457,7 @@ a {
 }
 
 .cinema-layer[data-presentation="wide-cinematic"] .cinema-media {
-  inset: clamp(1.5rem, 3vw, 3rem) clamp(0.75rem, 1.7vw, 1.7rem);
+  inset: 0;
 }
 
 .cinema-layer[data-presentation="wide-cinematic"] .cinema-media img,
@@ -409,7 +467,7 @@ a {
 }
 
 .cinema-layer[data-presentation="portrait"] .cinema-media {
-  inset: -4svh 0;
+  inset: 0;
 }
 
 .cinema-layer[data-presentation="portrait"]::before {
@@ -418,9 +476,7 @@ a {
 }
 
 .cinema-layer[data-presentation="portrait"]::after {
-  background:
-    linear-gradient(90deg, rgba(8, 9, 11, 0.62) 0%, rgba(8, 9, 11, 0.2) 36%, transparent 64%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.46), transparent 40%);
+  background: transparent;
 }
 
 .scene-life {
@@ -475,9 +531,7 @@ a {
   z-index: 3;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.22), transparent 22%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.62), transparent 36%);
+  background: transparent;
 }
 
 .scene-caption {
@@ -486,11 +540,40 @@ a {
   left: var(--caption-left, var(--edge));
   right: var(--caption-right, auto);
   bottom: clamp(4.5rem, 9vh, 6.5rem);
-  width: min(22rem, calc(100vw - (2 * var(--edge))));
+  width: min(var(--caption-width, 22rem), calc(100vw - (2 * var(--edge))));
   color: var(--haze);
   opacity: 0;
   transform: translateY(18px);
   text-shadow: 0 2px 18px rgba(8, 9, 11, 0.42);
+  isolation: isolate;
+}
+
+.scene-caption::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -2.4rem -2.8rem;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: blur(5px);
+}
+
+.scene-caption[data-scrim="dark"]::before {
+  background: radial-gradient(ellipse at center, rgba(5, 6, 8, 0.62), rgba(5, 6, 8, 0.28) 48%, transparent 74%);
+}
+
+.scene-caption[data-scrim="light"]::before {
+  background: radial-gradient(ellipse at center, rgba(249, 244, 235, 0.58), rgba(249, 244, 235, 0.22) 48%, transparent 74%);
+}
+
+.scene-caption[data-tone="dark"] {
+  color: #17191c;
+  text-shadow: 0 1px 14px rgba(255, 252, 246, 0.34);
+}
+
+.scene-caption[data-tone="light"] {
+  color: #fffaf2;
+  text-shadow: 0 2px 20px rgba(5, 6, 8, 0.68);
 }
 
 .scene-caption[data-side="right"] {
@@ -515,6 +598,14 @@ a {
   color: rgba(239, 233, 223, 0.72);
 }
 
+.scene-caption[data-tone="dark"] .scene-caption__index {
+  color: rgba(23, 25, 28, 0.72);
+}
+
+.scene-caption[data-tone="light"] .scene-caption__index {
+  color: rgba(255, 250, 242, 0.88);
+}
+
 .scene-caption h2 {
   margin: 0;
   font-family: var(--font-display);
@@ -536,6 +627,14 @@ a {
   letter-spacing: 0.035em;
   color: rgba(239, 233, 223, 0.82);
   text-wrap: pretty;
+}
+
+.scene-caption[data-tone="dark"] p {
+  color: rgba(23, 25, 28, 0.82);
+}
+
+.scene-caption[data-tone="light"] p {
+  color: rgba(255, 250, 242, 0.92);
 }
 
 .transition-flare {
@@ -660,7 +759,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  background-image: url("assets/atmosphere/cloud-mid-v2.webp");
+  background-image: var(--cloud-mid-image, url("assets/atmosphere/cloud-mid-v2.webp"));
   background-repeat: no-repeat;
   background-size: 145% auto;
   mix-blend-mode: screen;
@@ -674,7 +773,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 }
 
 .hero-mist--coast {
-  background-image: url("assets/atmosphere/cloud-far-v2.webp");
+  background-image: var(--cloud-far-image, url("assets/atmosphere/cloud-far-v2.webp"));
   background-position: 84% 24%;
   mask-image: radial-gradient(ellipse 38% 16% at 77% 30%, #000 8%, rgba(0, 0, 0, 0) 70%);
   -webkit-mask-image: radial-gradient(ellipse 38% 16% at 77% 30%, #000 8%, rgba(0, 0, 0, 0) 70%);
@@ -684,6 +783,30 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   background-position: 44% 100%;
   mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
   -webkit-mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
+}
+
+html[data-viewport="tabletLandscape"] .hero-mist,
+html[data-viewport="tabletPortrait"] .hero-mist {
+  mix-blend-mode: normal;
+}
+
+html[data-viewport="mobile"] .hero-mist {
+  mix-blend-mode: normal;
+}
+
+html[data-viewport="tabletLandscape"] .hero-mist--foreground,
+html[data-viewport="tabletPortrait"] .hero-mist--foreground,
+html[data-viewport="mobile"] .hero-mist--coast,
+html[data-viewport="mobile"] .hero-mist--foreground,
+html[data-intro-mode="tabletLite"] .hero-mist--coast,
+html[data-intro-mode="tabletLite"] .hero-mist--foreground,
+html[data-intro-mode="lite"] .hero-mist--coast,
+html[data-intro-mode="lite"] .hero-mist--foreground,
+html[data-viewport="tabletLandscape"] .sky-breath,
+html[data-viewport="tabletPortrait"] .sky-breath,
+html[data-viewport="mobile"] .sky-breath,
+html[data-intro-mode="lite"] .sky-breath {
+  display: none;
 }
 
 /* A single, extremely slow luminance breath over the sky. No hue movement,
@@ -762,7 +885,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   right: var(--edge);
   max-width: 62%;
   bottom: clamp(3.5rem, 9vh, 7rem);
-  z-index: 3;
+  z-index: 40;
   pointer-events: none;
   will-change: transform, opacity;
 }
@@ -945,7 +1068,8 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 
 .hud__progress-label {
   font-variant-numeric: tabular-nums;
-  color: rgba(198, 188, 174, 0.85);
+  color: rgba(255, 250, 242, 0.88);
+  text-shadow: 0 1px 14px rgba(5, 6, 8, 0.74);
 }
 
 .signature {
@@ -1083,7 +1207,7 @@ html[data-viewport="tabletLandscape"] .cinema-layer:is(
   [data-presentation="wide-cinematic"],
   [data-presentation="portrait"]
 ) .cinema-media {
-  inset: 24px;
+  inset: 0;
 }
 
 html[data-viewport="tabletLandscape"] .scene-caption[data-vertical="top"] {
@@ -1192,9 +1316,7 @@ html[data-viewport="tabletPortrait"] .scene-caption h2 {
 }
 
 html[data-viewport="tabletPortrait"] .cinema-layer::after {
-  background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.24), transparent 24%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 47%);
+  background: transparent;
 }
 
 html[data-viewport="tabletPortrait"] .cinema-layer:is(
@@ -1202,7 +1324,7 @@ html[data-viewport="tabletPortrait"] .cinema-layer:is(
   [data-presentation="wide-cinematic"],
   [data-presentation="portrait"]
 ) .cinema-media {
-  inset: 18px;
+  inset: 0;
 }
 
 html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="standard-landscape"] .cinema-media img {
@@ -1225,7 +1347,7 @@ html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="portrait"]
 }
 
 html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-cinematic"]::after {
-  background: linear-gradient(0deg, rgba(8, 9, 11, 0.9), transparent 54%);
+  background: transparent;
 }
 
 html[data-viewport="tabletPortrait"] .signature {
@@ -1274,6 +1396,8 @@ html[data-viewport="mobile"] .hero-mist--foreground {
 
 html[data-viewport="mobile"] .bird {
   width: clamp(105px, 29vw, 136px);
+  filter: none;
+  will-change: transform, opacity;
 }
 
 html[data-viewport="mobile"] .hud__wordmark {
@@ -1389,9 +1513,7 @@ html[data-viewport="mobile"] .scene-caption p {
 }
 
 html[data-viewport="mobile"] .cinema-layer::after {
-  background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.28), transparent 24%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 50%);
+  background: transparent;
 }
 
 html[data-viewport="mobile"] .cinema-layer:is(
@@ -1432,9 +1554,7 @@ html[data-viewport="mobile"] .cinema-layer:is(
   [data-presentation="wide-cinematic"],
   [data-presentation="portrait"]
 )::after {
-  background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.18), transparent 27%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 58%);
+  background: transparent;
 }
 
 html[data-viewport="mobile"] .signature {

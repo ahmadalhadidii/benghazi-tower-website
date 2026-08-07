@@ -1,8 +1,8 @@
 # Benghazi Tower — A New Way of Living
 
-A scroll-driven architectural film for Benghazi Tower. The experience begins
+A scene-driven architectural film for Benghazi Tower. The experience begins
 inside layered photoreal cloud depth, lands on the aerial hero, then hands control to
-the visitor for a pinned fourteen-scene journey through the project.
+the visitor for a fixed-viewport fourteen-scene journey through the project.
 
 ## Run it
 
@@ -18,7 +18,7 @@ Open `http://localhost:5173`.
 
 ## Experience architecture
 
-The current implementation deliberately keeps time-driven and scroll-driven
+The current implementation deliberately keeps the autoplay intro and discrete
 motion separate:
 
 - `Intro` controls the one-time cloud descent, hero landing, bird fly-by, title,
@@ -26,10 +26,10 @@ motion separate:
 - `SceneDeck` renders scene layers from `experienceConfig.scenes`, applies the
   desktop, tablet-landscape, tablet-portrait, and mobile art direction, and
   progressively assigns image sources.
-- `ScrollFramework` pins a single full-screen frame and scrubs the complete
-  sequence. Each incoming scene uses its configured transition family.
+- `SceneNavigation` turns one deliberate wheel gesture, trackpad swipe, touch
+  swipe, or navigation key into one self-running cinematic scene transition.
 - `Interface` controls project menu destinations, focus trapping, and the
-  scroll cue.
+  gesture cue.
 
 The menu points to four real moments in the journey: The Arrival, The
 Waterfront, The Court, and The Horizon. Authorship remains only in the fixed
@@ -54,7 +54,7 @@ bottom signature.
 
 All scene metadata, copy, focal points, scales, and transition choices are at
 the top of `script.js` in `experienceConfig.scenes`. Add a future scene there;
-the DOM, progress HUD, lazy loading, and timeline are generated from the same
+the DOM, progress HUD, lazy loading, and transitions are generated from the same
 configuration.
 
 ## Assets
@@ -80,20 +80,21 @@ path, scale ramp, acceleration, and near-lens defocus.
 
 Every scene defines independent desktop and mobile camera start, reading, and
 exit states as well as tablet-blended framing. Standard views retain a
-controlled cover crop; wide views can switch to an image-toned cinematic frame
-on portrait screens, while portrait interiors use contained editorial frames on
-desktop. No architecture is stretched or warped. Transition families follow
+controlled edge-to-edge cover crop; wide and portrait views use a proportional
+primary render over an image-derived full-viewport field where needed. No
+architecture is stretched or warped. Transition families follow
 shared architectural lines: matched push, light cut, ribbon reveal, central
 void, glass wipe, depth dissolve, ceiling match, and horizon dissolve. Phones
 use shorter travel and simplified reveals.
 
 ## Performance and accessibility
 
-- GSAP + ScrollTrigger only; no WebGL or continuous render loop for scenes.
+- GSAP only; no ScrollTrigger, smooth-scroll engine, WebGL, or continuous
+  render loop for scenes.
 - Mobile uses 900 px WebPs, three cloud layers, no descent blur, a compact
-  horizontal chapter label, and shorter per-scene scroll distances.
+  horizontal chapter label, and shorter self-running transitions.
 - Scene images decode asynchronously and receive their URLs progressively.
-- Height-only mobile browser-bar changes do not refresh the pinned journey;
+- Height-only mobile browser-bar changes do not rebuild the scene journey;
   true orientation changes preserve the active chapter.
 - Intro, atmosphere, and bird motion pause while the tab is hidden.
 - `prefers-reduced-motion` shortens the intro, disables the bird, removes depth
