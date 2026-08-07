@@ -33,6 +33,10 @@
 
   /* Layout */
   --edge: clamp(1.25rem, 4vw, 3.75rem);
+  --safe-top: max(var(--edge), env(safe-area-inset-top));
+  --safe-right: max(var(--edge), env(safe-area-inset-right));
+  --safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  --safe-left: max(var(--edge), env(safe-area-inset-left));
   --hairline: rgba(239, 233, 223, 0.28);
 
   /* Hero framing — every positional decision for the render lives here.
@@ -84,6 +88,7 @@ body {
   overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  touch-action: pan-y;
 }
 
 /* No scrolling until the opening sequence has handed control to the user. */
@@ -249,8 +254,7 @@ a {
 
 .cloud {
   position: absolute;
-  /* oversized so scaling never reveals an edge */
-  inset: -55%;
+  inset: -10%;
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -260,20 +264,24 @@ a {
 }
 
 .cloud--far {
-  background-image: url("assets/atmosphere/cloud-far.webp");
+  inset: -8%;
+  background-image: url("assets/atmosphere/cloud-far-v2.webp");
 }
 
 .cloud--mid {
-  background-image: url("assets/atmosphere/cloud-mid.webp");
+  inset: -12%;
+  background-image: url("assets/atmosphere/cloud-mid-v2.webp");
 }
 
-.cloud--near-a,
-.cloud--near-b {
-  background-image: url("assets/atmosphere/cloud-near.webp");
+.cloud--near {
+  inset: -18%;
+  background-image: url("assets/atmosphere/cloud-near-v2.webp");
 }
 
-.cloud--near-b {
-  transform: scaleX(-1);
+.cloud--foreground {
+  inset: -30%;
+  background-image: url("assets/atmosphere/cloud-near-v2.webp");
+  background-position: 74% 42%;
 }
 
 /* The whiteout the sequence begins inside. Its colour is sampled from the
@@ -304,27 +312,7 @@ a {
 .scene--hero {
   height: 100vh;
   height: 100svh;
-  min-height: 520px;
   overflow: hidden;
-}
-
-/* Empty containers reserved for the walkthrough. They hold no design yet. */
-.scene--reserved {
-  height: 60svh;
-  background: var(--ink);
-}
-
-.scene__reserved-note {
-  position: absolute;
-  left: var(--edge);
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(139, 141, 144, 0.55);
-  display: none;
-}
-
-body[data-debug="true"] .scene__reserved-note {
-  display: block;
 }
 
 /* --- hero stage ---------------------------------------------------------- */
@@ -334,6 +322,153 @@ body[data-debug="true"] .scene__reserved-note {
   inset: 0;
   overflow: hidden;
   background: var(--ink);
+}
+
+.cinema-layer,
+.scene-stack,
+.transition-flare {
+  position: absolute;
+  inset: 0;
+}
+
+.cinema-layer {
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  background: var(--scene-tone, var(--ink));
+  will-change: opacity, transform, clip-path;
+}
+
+.cinema-layer--hero {
+  visibility: visible;
+}
+
+.scene-stack {
+  z-index: 2;
+}
+
+.cinema-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.cinema-media img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: var(--scene-focus, 50% 50%);
+  transform: scale(var(--scene-scale, 1));
+  transform-origin: var(--scene-focus, 50% 50%);
+  will-change: transform;
+}
+
+.cinema-media img:not([src]) {
+  visibility: hidden;
+}
+
+/* Per-scene editorial alternatives to destructive full-cover cropping. */
+.cinema-layer[data-presentation="portrait-frame"] .cinema-media {
+  background:
+    radial-gradient(70% 100% at 78% 45%, color-mix(in srgb, var(--scene-tone) 76%, #ffffff 8%), transparent 74%),
+    var(--scene-tone);
+}
+
+.cinema-layer[data-presentation="portrait-frame"] .cinema-media img {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(64vw, 920px);
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.cinema-layer[data-presentation="portrait-frame"]::after {
+  background:
+    linear-gradient(90deg, rgba(8, 9, 11, 0.82) 0%, rgba(8, 9, 11, 0.42) 34%, transparent 67%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.54), transparent 38%);
+}
+
+.cinema-layer[data-presentation="portrait-frame"] .scene-caption {
+  width: min(30rem, 36vw);
+}
+
+.cinema-layer[data-presentation="wide-frame"] .cinema-media {
+  background:
+    radial-gradient(80% 68% at 50% 34%, color-mix(in srgb, var(--scene-tone) 80%, #ffffff 6%), transparent 78%),
+    var(--scene-tone);
+}
+
+.cinema-layer[data-presentation="wide-frame"] .cinema-media img {
+  position: absolute;
+  top: clamp(4.75rem, 8svh, 7rem);
+  left: var(--safe-left);
+  width: calc(100% - var(--safe-left) - var(--safe-right));
+  height: 58svh;
+  object-fit: contain;
+  object-position: var(--scene-focus, 50% 50%);
+  box-shadow: 0 2rem 5rem rgba(8, 9, 11, 0.22);
+}
+
+.cinema-layer[data-presentation="wide-frame"]::after {
+  background:
+    linear-gradient(180deg, rgba(8, 9, 11, 0.16), transparent 24%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.82), transparent 48%);
+}
+
+.cinema-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 9, 11, 0.22), transparent 22%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.62), transparent 36%);
+}
+
+.scene-caption {
+  position: absolute;
+  z-index: 3;
+  left: var(--caption-left, var(--edge));
+  right: var(--caption-right, auto);
+  bottom: clamp(4.5rem, 9vh, 6.5rem);
+  width: min(22rem, calc(100vw - (2 * var(--edge))));
+  color: var(--haze);
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.scene-caption[data-side="right"] {
+  left: auto;
+  right: var(--edge);
+  text-align: right;
+}
+
+.scene-caption__index {
+  display: block;
+  margin-bottom: 0.9rem;
+  color: rgba(239, 233, 223, 0.72);
+}
+
+.scene-caption h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.transition-flare {
+  z-index: 38;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle at 12% 28%, rgba(247, 239, 226, 0.72), rgba(247, 239, 226, 0) 58%);
 }
 
 .hero-reveal {
@@ -443,26 +578,37 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   -webkit-mask-composite: source-in;
 }
 
-/* One resting wisp of the same cloud material, masked to the sky band and
-   drifting almost imperceptibly. */
-.mist-rest {
+/* Three mist-rich zones keep the existing atmosphere alive without duplicating
+   the tower, road or shoreline geometry from the hero render. */
+.hero-mist {
   position: absolute;
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  background-image: url("assets/atmosphere/cloud-mid.webp");
+  background-image: url("assets/atmosphere/cloud-mid-v2.webp");
   background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 200% auto;
-  will-change: transform;
-  mask-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0) 2%, #000 14%, #000 26%, rgba(0, 0, 0, 0) 40%),
-    linear-gradient(90deg, #000 0%, #000 40%, rgba(0, 0, 0, 0) 62%);
-  -webkit-mask-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0) 2%, #000 14%, #000 26%, rgba(0, 0, 0, 0) 40%),
-    linear-gradient(90deg, #000 0%, #000 40%, rgba(0, 0, 0, 0) 62%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
+  background-size: 145% auto;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.hero-mist--sea {
+  background-position: 18% 18%;
+  mask-image: radial-gradient(ellipse 48% 20% at 26% 31%, #000 12%, rgba(0, 0, 0, 0) 72%);
+  -webkit-mask-image: radial-gradient(ellipse 48% 20% at 26% 31%, #000 12%, rgba(0, 0, 0, 0) 72%);
+}
+
+.hero-mist--coast {
+  background-image: url("assets/atmosphere/cloud-far-v2.webp");
+  background-position: 84% 24%;
+  mask-image: radial-gradient(ellipse 38% 16% at 77% 30%, #000 8%, rgba(0, 0, 0, 0) 70%);
+  -webkit-mask-image: radial-gradient(ellipse 38% 16% at 77% 30%, #000 8%, rgba(0, 0, 0, 0) 70%);
+}
+
+.hero-mist--foreground {
+  background-position: 44% 100%;
+  mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
+  -webkit-mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
 }
 
 /* A single, extremely slow luminance breath over the sky. No hue movement,
@@ -485,12 +631,14 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 
 .bird {
   position: absolute;
+  z-index: 42;
   top: 0;
   left: 0;
-  width: clamp(120px, 14vw, 220px);
+  width: clamp(150px, 16vw, 260px);
   opacity: 0;
   pointer-events: none;
   will-change: transform, filter, opacity;
+  filter: drop-shadow(0 4px 8px rgba(8, 9, 11, 0.12));
 }
 
 .bird__media {
@@ -504,6 +652,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 .hero-edge {
   position: absolute;
   inset: 0;
+  z-index: 39;
   pointer-events: none;
 }
 
@@ -615,15 +764,18 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 
 .hud__wordmark {
   position: absolute;
-  top: var(--edge);
-  left: var(--edge);
+  top: var(--safe-top);
+  left: var(--safe-left);
   color: rgba(239, 233, 223, 0.82);
 }
 
 .hud__menu {
   position: absolute;
-  top: var(--edge);
-  right: var(--edge);
+  top: var(--safe-top);
+  right: var(--safe-right);
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: flex-end;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -720,27 +872,26 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   color: rgba(198, 188, 174, 0.85);
 }
 
-/* Development marker — delete the element and this block to remove. */
-.dev-marker {
-  position: absolute;
+.signature {
+  position: fixed;
+  z-index: 56;
   left: 50%;
-  bottom: clamp(2rem, 6vh, 4rem);
-  transform: translateX(-50%);
-  z-index: 4;
+  bottom: max(clamp(1.15rem, 2.6vh, 2rem), env(safe-area-inset-bottom));
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  opacity: 0;
-  color: rgba(239, 233, 223, 0.6);
+  align-items: baseline;
+  gap: clamp(1.1rem, 3vw, 3rem);
+  transform: translateX(-50%);
+  color: rgba(198, 188, 174, 0.66);
   white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.dev-marker::before,
-.dev-marker::after {
-  content: "";
-  width: clamp(24px, 6vw, 70px);
-  height: 1px;
-  background: rgba(239, 233, 223, 0.35);
+.signature strong {
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  color: #d9b88f;
 }
 
 /* --------------------------------------------------------------------------
@@ -754,7 +905,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: var(--edge);
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   background: rgba(8, 9, 11, 0.97);
   visibility: hidden;
   opacity: 0;
@@ -770,8 +921,10 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
 
 .menu__close {
   position: absolute;
-  top: var(--edge);
-  right: var(--edge);
+  top: var(--safe-top);
+  right: var(--safe-right);
+  min-width: 44px;
+  min-height: 44px;
   color: rgba(239, 233, 223, 0.8);
 }
 
@@ -790,6 +943,8 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   display: flex;
   align-items: baseline;
   gap: clamp(1rem, 4vw, 3rem);
+  width: 100%;
+  text-align: left;
   padding: clamp(0.6rem, 2.2vh, 1.3rem) 0;
   font-family: var(--font-display);
   font-weight: 300;
@@ -822,49 +977,330 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
    9. Responsive
    -------------------------------------------------------------------------- */
 
-@media (max-width: 900px) {
-  :root {
-    --ui-tracking: 0.2em;
-    /* Keep the tower centred and whole on portrait crops. */
-    --hero-object-position: 56% 44%;
-    --horizon-y: 18%;
-    --sky-band-bottom: 30%;
+/* Tablet landscape is deliberately denser than desktop, but remains a
+   horizontal cinematic composition rather than a scaled-up phone. */
+html[data-viewport="tabletLandscape"] {
+  --edge: clamp(1.6rem, 3.2vw, 2.5rem);
+  --ui-tracking: 0.21em;
+}
+
+html[data-viewport="tabletLandscape"] .hero-type {
+  max-width: 62%;
+  bottom: clamp(3.8rem, 8.5svh, 5.4rem);
+}
+
+html[data-viewport="tabletLandscape"] .hero-type__title {
+  font-size: clamp(4rem, 7.2vw, 5.5rem);
+}
+
+html[data-viewport="tabletLandscape"] .scene-caption {
+  bottom: clamp(4.8rem, 10svh, 6.4rem);
+  width: min(21rem, 42vw);
+}
+
+html[data-viewport="tabletLandscape"] .scene-caption h2 {
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+}
+
+html[data-viewport="tabletLandscape"] .menu__link {
+  min-height: 64px;
+  padding-block: 0.45rem;
+  font-size: clamp(2.55rem, 4.7vw, 3.25rem);
+}
+
+html[data-viewport="tabletLandscape"] .menu__foot {
+  margin-top: clamp(1.25rem, 3svh, 2rem);
+}
+
+/* Tablet portrait has its own hierarchy and navigation rhythm. */
+html[data-viewport="tabletPortrait"] {
+  --edge: clamp(1.7rem, 4.2vw, 2.35rem);
+  --ui-tracking: 0.2em;
+  --horizon-y: 18%;
+  --sky-band-bottom: 30%;
+}
+
+html[data-viewport="tabletPortrait"] .hud__wordmark {
+  display: none;
+}
+
+html[data-viewport="tabletPortrait"] .hud__progress {
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: auto;
+  transform: none;
+  writing-mode: horizontal-tb;
+  gap: 0;
+}
+
+html[data-viewport="tabletPortrait"] .hud__progress-track {
+  display: none;
+}
+
+html[data-viewport="tabletPortrait"] .hero-type {
+  max-width: 82%;
+  bottom: clamp(9.2rem, 14svh, 11rem);
+}
+
+html[data-viewport="tabletPortrait"] .hero-type__title {
+  font-size: clamp(3.8rem, 8.5vw, 4.65rem);
+  letter-spacing: 0.042em;
+}
+
+html[data-viewport="tabletPortrait"] .hero-type__subtitle {
+  font-size: clamp(1.2rem, 3vw, 1.55rem);
+}
+
+html[data-viewport="tabletPortrait"] .hud__cue {
+  right: var(--safe-right);
+  bottom: clamp(5.4rem, 7.5svh, 6.5rem);
+  flex-direction: row;
+  align-items: center;
+}
+
+html[data-viewport="tabletPortrait"] .hud__cue-line {
+  width: 48px;
+  height: 1px;
+}
+
+html[data-viewport="tabletPortrait"] .hud__cue-line::after {
+  width: 18px;
+  height: 1px;
+  animation-name: cue-travel-horizontal;
+}
+
+html[data-viewport="tabletPortrait"] .scene-caption {
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: clamp(7.8rem, 10svh, 9rem);
+  width: min(24rem, calc(100vw - var(--safe-left) - var(--safe-right)));
+}
+
+html[data-viewport="tabletPortrait"] .scene-caption h2 {
+  font-size: clamp(1.55rem, 4vw, 2.1rem);
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer::after {
+  background:
+    linear-gradient(180deg, rgba(8, 9, 11, 0.24), transparent 24%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 47%);
+}
+
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-frame"]::after {
+  background: linear-gradient(0deg, rgba(8, 9, 11, 0.9), transparent 54%);
+}
+
+html[data-viewport="tabletPortrait"] .signature {
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: max(1.1rem, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: 0.2rem 1.35rem;
+  transform: none;
+  font-size: 0.64rem;
+  letter-spacing: 0.17em;
+  text-align: right;
+}
+
+html[data-viewport="tabletPortrait"] .signature strong {
+  grid-column: 1 / -1;
+  letter-spacing: 0.19em;
+}
+
+html[data-viewport="tabletPortrait"] .menu__link {
+  min-height: 72px;
+  padding-block: 0.55rem;
+  font-size: clamp(2.5rem, 6.3vw, 3.2rem);
+}
+
+/* Phone, in either orientation: essential controls only, with a two-tier
+   signature and shorter, cheaper atmospheric work. */
+html[data-viewport="mobile"] {
+  --edge: clamp(1.05rem, 4.8vw, 1.4rem);
+  --ui-size: 0.625rem;
+  --ui-tracking: 0.18em;
+  --horizon-y: 18%;
+  --sky-band-bottom: 28%;
+}
+
+html[data-viewport="mobile"] .scene--hero {
+  min-height: 100svh;
+}
+
+html[data-viewport="mobile"] .cloud--foreground,
+html[data-viewport="mobile"] .hero-mist--foreground {
+  display: none;
+}
+
+html[data-viewport="mobile"] .bird {
+  width: clamp(105px, 29vw, 136px);
+}
+
+html[data-viewport="mobile"] .hud__wordmark {
+  display: none;
+}
+
+html[data-viewport="mobile"] .hud__progress {
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: auto;
+  transform: none;
+  writing-mode: horizontal-tb;
+  gap: 0;
+}
+
+html[data-viewport="mobile"] .hud__progress-track {
+  display: none;
+}
+
+html[data-viewport="mobile"] .hud__menu {
+  top: calc(var(--safe-top) - 0.7rem);
+}
+
+html[data-viewport="mobile"] .hero-type {
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: clamp(8.3rem, 16svh, 9.2rem);
+  max-width: none;
+}
+
+html[data-viewport="mobile"] .hero-type__rule {
+  margin-bottom: 0.75rem;
+}
+
+html[data-viewport="mobile"] .hero-type__place {
+  margin-bottom: 0.62rem;
+}
+
+html[data-viewport="mobile"] .hero-type__title {
+  font-size: clamp(2.62rem, 11.7vw, 3.18rem);
+  line-height: 0.88;
+  letter-spacing: 0.035em;
+}
+
+html[data-viewport="mobile"] .hero-type__subtitle {
+  margin-top: 0.62rem;
+  font-size: clamp(1rem, 5vw, 1.18rem);
+}
+
+html[data-viewport="mobile"] .hud__cue {
+  left: var(--safe-left);
+  right: auto;
+  bottom: clamp(4.3rem, 8.4svh, 4.9rem);
+  min-height: 44px;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+html[data-viewport="mobile"] .hud__cue-line {
+  width: 38px;
+  height: 1px;
+}
+
+html[data-viewport="mobile"] .hud__cue-line::after {
+  width: 15px;
+  height: 1px;
+  animation-name: cue-travel-horizontal;
+}
+
+@keyframes cue-travel-horizontal {
+  0% { transform: translateX(-100%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateX(255%); opacity: 0; }
+}
+
+html[data-viewport="mobile"] .scene-caption,
+html[data-viewport="mobile"] .scene-caption[data-side="right"] {
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: clamp(5.7rem, 11svh, 6.5rem);
+  width: auto;
+  text-align: left;
+}
+
+html[data-viewport="mobile"] .scene-caption__index {
+  margin-bottom: 0.55rem;
+}
+
+html[data-viewport="mobile"] .scene-caption h2 {
+  font-size: clamp(1.35rem, 6.4vw, 1.7rem);
+  line-height: 1;
+}
+
+html[data-viewport="mobile"] .cinema-layer::after {
+  background:
+    linear-gradient(180deg, rgba(8, 9, 11, 0.28), transparent 24%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 50%);
+}
+
+html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-frame"] .cinema-media img {
+  top: clamp(4.5rem, 9svh, 5.2rem);
+  height: 54svh;
+}
+
+html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-frame"]::after {
+  background: linear-gradient(0deg, rgba(8, 9, 11, 0.94), transparent 58%);
+}
+
+html[data-viewport="mobile"] .signature {
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: max(0.72rem, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: 0.08rem 0.9rem;
+  transform: none;
+  font-size: 0.53rem;
+  line-height: 1.3;
+  letter-spacing: 0.13em;
+  text-align: right;
+}
+
+html[data-viewport="mobile"] .signature strong {
+  grid-column: 1 / -1;
+  letter-spacing: 0.15em;
+}
+
+html[data-viewport="mobile"] .menu {
+  justify-content: center;
+}
+
+html[data-viewport="mobile"] .menu__link {
+  min-height: 58px;
+  gap: 1rem;
+  padding-block: 0.42rem;
+  font-size: clamp(2rem, 9vw, 2.35rem);
+}
+
+html[data-viewport="mobile"] .menu__foot {
+  margin-top: clamp(1.5rem, 4svh, 2.5rem);
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  html[data-viewport="mobile"] .hero-type {
+    bottom: 3.4rem;
+    max-width: 54%;
   }
 
-  .hud__progress {
+  html[data-viewport="mobile"] .hero-type__title {
+    font-size: clamp(2.2rem, 7vw, 3rem);
+  }
+
+  html[data-viewport="mobile"] .hero-type__subtitle,
+  html[data-viewport="mobile"] .hud__cue,
+  html[data-viewport="mobile"] .signature {
     display: none;
   }
 
-  .hero-type {
-    bottom: clamp(4.5rem, 12vh, 7rem);
-    max-width: 100%;
+  html[data-viewport="mobile"] .scene-caption {
+    bottom: 2rem;
+    max-width: 52%;
   }
 
-  .hero-type__title {
-    letter-spacing: 0.04em;
-  }
-}
-
-@media (max-width: 560px) {
-  :root {
-    --hero-object-position: 58% 42%;
-  }
-
-  .hud__cue {
-    left: var(--edge);
-    right: auto;
-    align-items: flex-start;
-  }
-
-  .hero-type {
-    bottom: clamp(6rem, 16vh, 9rem);
-  }
-}
-
-@media (orientation: portrait) and (max-width: 900px) {
-  .hero-type__title {
-    font-size: clamp(2.6rem, 13vw, 4.6rem);
-  }
 }
 
 /* --------------------------------------------------------------------------
@@ -882,5 +1318,11 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   .menu__link,
   .hud__menu-glyph i {
     transition-duration: 0.001s;
+  }
+
+  .cinema-layer,
+  .cinema-media img,
+  .scene-caption {
+    will-change: auto;
   }
 }

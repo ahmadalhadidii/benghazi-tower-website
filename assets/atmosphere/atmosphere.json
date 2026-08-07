@@ -1,4 +1,4 @@
 {
-  "bird": null,
-  "_bird": "Set to \"bird.webm\" (transparent WebM in this folder) or \"bird-sequence/manifest.json\" for a frame sequence. See README.md. While null, the fly-by stays idle and no placeholder is drawn."
+  "bird": "mediterranean-gull.webp",
+  "_bird": "A small alpha WebP used by the existing one-time cinematic flight path."
 }

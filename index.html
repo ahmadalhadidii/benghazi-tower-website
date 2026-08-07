@@ -41,8 +41,8 @@
 <div class="flythrough" id="flythrough" aria-hidden="true">
   <div class="cloud cloud--far"></div>
   <div class="cloud cloud--mid"></div>
-  <div class="cloud cloud--near-a"></div>
-  <div class="cloud cloud--near-b"></div>
+  <div class="cloud cloud--near"></div>
+  <div class="cloud cloud--foreground"></div>
 </div>
 <div class="haze" id="haze" aria-hidden="true"></div>
 
@@ -50,13 +50,13 @@
 <main class="experience" id="experience">
 
   <!-- Scene 01 — arrival + exterior approach -->
-  <section class="scene scene--hero" id="scene-hero" data-scene="heroArrival" aria-labelledby="project-title">
+  <section class="scene scene--hero" id="scene-project" data-scene="heroArrival" aria-labelledby="project-title">
 
     <div class="hero-stage">
       <div class="hero-fallback" aria-hidden="true"></div>
 
       <!-- masked so the sky of the render resolves before the land -->
-      <div class="hero-reveal">
+      <div class="hero-reveal cinema-layer cinema-layer--hero" data-scene-index="0">
         <div class="hero-media">
           <img
             class="hero-media__img js-hero-src"
@@ -69,10 +69,15 @@
                itself. Masked to the sky band, so the architecture never moves. -->
           <img class="sky-drift js-hero-src" alt="" aria-hidden="true" decoding="async">
 
-          <div class="mist-rest" aria-hidden="true"></div>
+          <div class="hero-mist hero-mist--sea" aria-hidden="true"></div>
+          <div class="hero-mist hero-mist--coast" aria-hidden="true"></div>
+          <div class="hero-mist hero-mist--foreground" aria-hidden="true"></div>
           <div class="sky-breath" aria-hidden="true"></div>
         </div>
       </div>
+
+      <div class="scene-stack" id="scene-stack" aria-live="off"></div>
+      <div class="transition-flare" aria-hidden="true"></div>
 
       <!-- Bird slot. Filled at runtime from a transparent WebM or a frame
            sequence; if neither exists it is removed, never faked.
@@ -92,17 +97,6 @@
       <p class="hero-type__subtitle">A new way of living</p>
     </div>
 
-    <!-- DEV ONLY — remove this element and the .dev-marker rules in styles.css -->
-    <p class="dev-marker u-label" data-dev="true">Next scene — Exterior approach</p>
-  </section>
-
-  <!-- Reserved containers. No content until the walkthrough is designed. -->
-  <section class="scene scene--reserved" id="scene-future-01" data-scene="futureScene01" aria-hidden="true">
-    <p class="scene__reserved-note u-label">futureScene01 — podium arrival</p>
-  </section>
-
-  <section class="scene scene--reserved" id="scene-future-02" data-scene="futureScene02" aria-hidden="true">
-    <p class="scene__reserved-note u-label">futureScene02 — lobby</p>
   </section>
 
 </main>
@@ -128,14 +122,19 @@
 </div>
 
 <!-- ── Menu ──────────────────────────────────────────────────────────────── -->
+<div class="signature u-label" aria-label="2026, BIM Lab, Ahmad Alhadidii">
+  <span>2026</span>
+  <span>BIM Lab</span>
+  <strong>Ahmad Alhadidii</strong>
+</div>
+
 <nav class="menu" id="menu" data-open="false" aria-hidden="true" aria-label="Project sections">
   <button class="menu__close u-label" id="menu-close" type="button">Close</button>
   <ul class="menu__list">
-    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">01</span>Project</a></li>
-    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">02</span>Architecture</a></li>
-    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">03</span>Experience</a></li>
-    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">04</span>Location</a></li>
-    <li class="menu__item"><a class="menu__link" href="#scene-hero"><span class="menu__index">05</span>Credits</a></li>
+    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="0"><span class="menu__index">01</span>The Arrival</button></li>
+    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="3"><span class="menu__index">02</span>The Waterfront</button></li>
+    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="7"><span class="menu__index">03</span>The Court</button></li>
+    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="13"><span class="menu__index">04</span>The Horizon</button></li>
   </ul>
   <p class="menu__foot u-label">Benghazi, Libya</p>
 </nav>
