@@ -351,6 +351,7 @@ a {
 .cinema-media {
   position: absolute;
   inset: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -369,58 +370,94 @@ a {
   visibility: hidden;
 }
 
-/* Per-scene editorial alternatives to destructive full-cover cropping. */
-.cinema-layer[data-presentation="portrait-frame"] .cinema-media {
-  background:
-    radial-gradient(70% 100% at 78% 45%, color-mix(in srgb, var(--scene-tone) 76%, #ffffff 8%), transparent 74%),
-    var(--scene-tone);
-}
-
-.cinema-layer[data-presentation="portrait-frame"] .cinema-media img {
+/* Deliberate cinema stages preserve the supplied compositions. The very quiet
+   image-derived field is an atmospheric extension, never a visible card/bar. */
+.cinema-layer[data-presentation$="-stage"]::before {
+  content: "";
   position: absolute;
-  inset: 0 0 0 auto;
-  width: min(64vw, 920px);
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-}
-
-.cinema-layer[data-presentation="portrait-frame"]::after {
+  z-index: 0;
+  inset: -2rem;
   background:
-    linear-gradient(90deg, rgba(8, 9, 11, 0.82) 0%, rgba(8, 9, 11, 0.42) 34%, transparent 67%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.54), transparent 38%);
+    linear-gradient(180deg, color-mix(in srgb, var(--scene-tone) 78%, #08090b 22%), rgba(8, 9, 11, 0.42)),
+    var(--scene-image) center / cover no-repeat;
+  opacity: 0.36;
+  filter: blur(18px) saturate(0.68) contrast(0.9);
+  transform: scale(1.06);
 }
 
-.cinema-layer[data-presentation="portrait-frame"] .scene-caption {
-  width: min(30rem, 36vw);
+.cinema-layer[data-presentation$="-stage"] .cinema-media {
+  inset: clamp(1.2rem, 3svh, 2.3rem) clamp(0.8rem, 2vw, 2rem);
 }
 
-.cinema-layer[data-presentation="wide-frame"] .cinema-media {
-  background:
-    radial-gradient(80% 68% at 50% 34%, color-mix(in srgb, var(--scene-tone) 80%, #ffffff 6%), transparent 78%),
-    var(--scene-tone);
-}
-
-.cinema-layer[data-presentation="wide-frame"] .cinema-media img {
-  position: absolute;
-  top: clamp(4.75rem, 8svh, 7rem);
-  left: var(--safe-left);
-  width: calc(100% - var(--safe-left) - var(--safe-right));
-  height: 58svh;
+.cinema-layer[data-presentation$="-stage"] .cinema-media img {
   object-fit: contain;
   object-position: var(--scene-focus, 50% 50%);
-  box-shadow: 0 2rem 5rem rgba(8, 9, 11, 0.22);
 }
 
-.cinema-layer[data-presentation="wide-frame"]::after {
+.cinema-layer[data-presentation="wide-stage"] .cinema-media {
+  inset: clamp(3.4rem, 8svh, 6rem) clamp(0.55rem, 1.7vw, 1.7rem) clamp(5rem, 13svh, 8.5rem);
+}
+
+.cinema-layer[data-presentation="portrait-stage"] .cinema-media {
+  inset: clamp(1.2rem, 2.5svh, 2rem) clamp(0.8rem, 2vw, 2rem);
+}
+
+.cinema-layer[data-presentation="portrait-stage"]::after {
   background:
-    linear-gradient(180deg, rgba(8, 9, 11, 0.16), transparent 24%),
-    linear-gradient(0deg, rgba(8, 9, 11, 0.82), transparent 48%);
+    linear-gradient(90deg, rgba(8, 9, 11, 0.74) 0%, rgba(8, 9, 11, 0.28) 36%, transparent 64%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.46), transparent 40%);
+}
+
+.scene-life {
+  position: absolute;
+  z-index: 2;
+  inset: -2%;
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  -webkit-mask-image: var(--life-mask);
+  mask-image: var(--life-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  will-change: opacity, transform;
+}
+
+.scene-life::before {
+  content: "";
+  position: absolute;
+  inset: -6%;
+}
+
+.scene-life[data-life="sea-shimmer"]::before,
+.scene-life[data-life="water-reflection"]::before {
+  background:
+    repeating-linear-gradient(103deg, transparent 0 34px, rgba(255, 244, 220, 0.24) 35px 36px, transparent 38px 67px),
+    linear-gradient(90deg, transparent, rgba(255, 246, 226, 0.18), transparent);
+  filter: blur(1px);
+}
+
+.scene-life[data-life="water-reflection"]::before {
+  background:
+    repeating-linear-gradient(94deg, transparent 0 22px, rgba(255, 244, 220, 0.25) 23px 24px, transparent 26px 49px),
+    linear-gradient(0deg, rgba(215, 234, 239, 0.08), rgba(255, 239, 204, 0.2));
+}
+
+.scene-life[data-life="light-breath"]::before,
+.scene-life[data-life="garden-light"]::before {
+  background: radial-gradient(circle at 38% 42%, rgba(255, 236, 201, 0.36), transparent 54%);
+  filter: blur(16px);
+}
+
+.scene-life[data-life="horizon-haze"]::before {
+  background: linear-gradient(90deg, transparent, rgba(228, 239, 240, 0.2) 46%, transparent 78%);
+  filter: blur(12px);
 }
 
 .cinema-layer::after {
   content: "";
   position: absolute;
+  z-index: 3;
   inset: 0;
   pointer-events: none;
   background:
@@ -430,7 +467,7 @@ a {
 
 .scene-caption {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   left: var(--caption-left, var(--edge));
   right: var(--caption-right, auto);
   bottom: clamp(4.5rem, 9vh, 6.5rem);
@@ -438,12 +475,23 @@ a {
   color: var(--haze);
   opacity: 0;
   transform: translateY(18px);
+  text-shadow: 0 2px 18px rgba(8, 9, 11, 0.42);
 }
 
 .scene-caption[data-side="right"] {
   left: auto;
   right: var(--edge);
   text-align: right;
+}
+
+.scene-caption[data-vertical="top"] {
+  top: clamp(5.4rem, 11svh, 8.5rem);
+  bottom: auto;
+}
+
+.scene-caption[data-vertical="middle"] {
+  top: 43%;
+  bottom: auto;
 }
 
 .scene-caption__index {
@@ -461,6 +509,18 @@ a {
   letter-spacing: 0.045em;
   text-transform: uppercase;
   text-wrap: balance;
+}
+
+.scene-caption p {
+  margin: 0.85rem 0 0;
+  max-width: 31rem;
+  font-family: var(--font-ui);
+  font-size: clamp(0.76rem, 0.92vw, 0.9rem);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0.035em;
+  color: rgba(239, 233, 223, 0.82);
+  text-wrap: pretty;
 }
 
 .transition-flare {
@@ -1002,6 +1062,16 @@ html[data-viewport="tabletLandscape"] .scene-caption h2 {
   font-size: clamp(1.5rem, 2.8vw, 2rem);
 }
 
+html[data-viewport="tabletLandscape"] .scene-caption[data-vertical="top"] {
+  top: clamp(5.1rem, 10svh, 7rem);
+  bottom: auto;
+}
+
+html[data-viewport="tabletLandscape"] .scene-caption[data-vertical="middle"] {
+  top: 42%;
+  bottom: auto;
+}
+
 html[data-viewport="tabletLandscape"] .menu__link {
   min-height: 64px;
   padding-block: 0.45rem;
@@ -1076,6 +1146,22 @@ html[data-viewport="tabletPortrait"] .scene-caption {
   width: min(24rem, calc(100vw - var(--safe-left) - var(--safe-right)));
 }
 
+html[data-viewport="tabletPortrait"] .scene-caption[data-side="right"] {
+  left: auto;
+  right: var(--safe-right);
+  text-align: right;
+}
+
+html[data-viewport="tabletPortrait"] .scene-caption[data-vertical="top"] {
+  top: clamp(5.4rem, 9svh, 7rem);
+  bottom: auto;
+}
+
+html[data-viewport="tabletPortrait"] .scene-caption[data-vertical="middle"] {
+  top: 43%;
+  bottom: auto;
+}
+
 html[data-viewport="tabletPortrait"] .scene-caption h2 {
   font-size: clamp(1.55rem, 4vw, 2.1rem);
 }
@@ -1086,7 +1172,7 @@ html[data-viewport="tabletPortrait"] .cinema-layer::after {
     linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 47%);
 }
 
-html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-frame"]::after {
+html[data-viewport="tabletPortrait"] .cinema-layer[data-presentation="wide-stage"]::after {
   background: linear-gradient(0deg, rgba(8, 9, 11, 0.9), transparent 54%);
 }
 
@@ -1212,13 +1298,19 @@ html[data-viewport="mobile"] .hud__cue-line::after {
   100% { transform: translateX(255%); opacity: 0; }
 }
 
-html[data-viewport="mobile"] .scene-caption,
-html[data-viewport="mobile"] .scene-caption[data-side="right"] {
+html[data-viewport="mobile"] .scene-caption {
   left: var(--safe-left);
-  right: var(--safe-right);
-  bottom: clamp(5.7rem, 11svh, 6.5rem);
-  width: auto;
+  right: auto;
+  top: 58svh;
+  bottom: auto;
+  width: min(87vw, 22rem);
   text-align: left;
+}
+
+html[data-viewport="mobile"] .scene-caption[data-side="right"] {
+  left: auto;
+  right: var(--safe-right);
+  text-align: right;
 }
 
 html[data-viewport="mobile"] .scene-caption__index {
@@ -1230,19 +1322,35 @@ html[data-viewport="mobile"] .scene-caption h2 {
   line-height: 1;
 }
 
+html[data-viewport="mobile"] .scene-caption p {
+  margin-top: 0.65rem;
+  font-size: clamp(0.7rem, 3.25vw, 0.8rem);
+  line-height: 1.48;
+}
+
 html[data-viewport="mobile"] .cinema-layer::after {
   background:
     linear-gradient(180deg, rgba(8, 9, 11, 0.28), transparent 24%),
     linear-gradient(0deg, rgba(8, 9, 11, 0.78), transparent 50%);
 }
 
-html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-frame"] .cinema-media img {
-  top: clamp(4.5rem, 9svh, 5.2rem);
-  height: 54svh;
+html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"] .cinema-media {
+  top: 9svh;
+  right: 0;
+  bottom: auto;
+  left: 0;
+  height: 45svh;
 }
 
-html[data-viewport="mobile"] .cinema-layer[data-presentation="wide-frame"]::after {
-  background: linear-gradient(0deg, rgba(8, 9, 11, 0.94), transparent 58%);
+html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"]::before {
+  opacity: 0.3;
+  filter: blur(14px) saturate(0.64) contrast(0.88);
+}
+
+html[data-viewport="mobile"] .cinema-layer[data-presentation$="-stage"]::after {
+  background:
+    linear-gradient(180deg, rgba(8, 9, 11, 0.18), transparent 27%),
+    linear-gradient(0deg, rgba(8, 9, 11, 0.92), transparent 62%);
 }
 
 html[data-viewport="mobile"] .signature {
@@ -1297,7 +1405,8 @@ html[data-viewport="mobile"] .menu__foot {
   }
 
   html[data-viewport="mobile"] .scene-caption {
-    bottom: 2rem;
+    top: auto;
+    bottom: 1.5rem;
     max-width: 52%;
   }
 
@@ -1322,6 +1431,7 @@ html[data-viewport="mobile"] .menu__foot {
 
   .cinema-layer,
   .cinema-media img,
+  .scene-life,
   .scene-caption {
     will-change: auto;
   }

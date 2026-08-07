@@ -56,174 +56,188 @@ const experienceConfig = {
   /* System */
   debugMode: false,
 
-  /* The complete journey. Crop, motion and transition decisions live here. */
+  /* The complete journey. Every scene is art-directed around three beats:
+     arrive (show the shot), read (hold it), move forward (aim at the next). */
   scenes: [
     {
       id: "arrival", label: "THE ARRIVAL", eyebrow: "Benghazi, Libya", title: "Benghazi Tower",
-      description: "Aerial approach to Benghazi Tower and its waterfront podium at dawn.",
+      description: "The tower rises from a continuous ground condition, where podium, landscape and circulation merge into one fluid waterfront system.",
       focus: { desktop: "50% 46%", tabletLandscape: "54% 46%", tabletPortrait: "56% 44%", mobile: "58% 43%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
       presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#8b8176", transition: "hero", transitionTarget: "tower podium",
-      camera: { origin: "48% 66%", start: [1, 0, 0], read: [1.028, -0.3, -0.5], end: [1.085, -1.3, -1.7] },
-      cameraMobile: { origin: "54% 64%", start: [1, 0, 0], read: [1.018, -0.1, -0.3], end: [1.055, -0.5, -1] },
+      tone: "#8b8176", transition: "hero", transitionTarget: "tower podium at 56% / 67%",
+      camera: { origin: "52% 66%", start: [1, 0, 0], read: [1.014, -0.1, -0.2], end: [1.054, -0.8, -1.1] },
+      cameraMobile: { origin: "57% 63%", start: [1, 0, 0], read: [1.01, 0, -0.1], end: [1.038, -0.35, -0.65] },
       caption: false
     },
     {
-      id: "aerial-detail", label: "TOWER APPROACH", eyebrow: "Approach", title: "Tower Approach",
-      description: "Closer aerial view of tower, continuous podium and Mediterranean edge.",
+      id: "aerial-detail", label: "ONE SYSTEM", eyebrow: "Masterplan", title: "One Continuous System",
+      description: "Tower, podium, circulation and waterfront landscape are read as one connected composition from ground to sky.",
       src: "assets/scenes/01-aerial-detail-1600.webp", mobileSrc: "assets/scenes/01-aerial-detail-900.webp",
-      focus: { desktop: "54% 46%", tabletLandscape: "57% 46%", tabletPortrait: "59% 46%", mobile: "61% 45%" },
-      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1.01, mobile: 1.01 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#8b8176", transition: "matched-push", transitionTarget: "lower podium opening",
-      camera: { origin: "55% 67%", start: [1.02, 0.8, 0.8], read: [1.065, 0, -0.1], end: [1.115, -1.2, -1.3] },
-      cameraMobile: { origin: "59% 63%", start: [1.015, 0.4, 0.4], read: [1.045, 0, 0], end: [1.078, -0.7, -0.8] },
-      caption: false
+      focus: { desktop: "52% 50%", tabletLandscape: "52% 50%", tabletPortrait: "52% 50%", mobile: "52% 50%" },
+      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#7d776f", transition: "matched-push", transitionTarget: "podium-to-tower fold at 57% / 68%",
+      camera: { origin: "57% 68%", start: [0.988, 0.6, 0.6], read: [1.002, 0, 0], end: [1.044, -0.8, -1.1] },
+      cameraMobile: { origin: "57% 66%", start: [0.992, 0.2, 0.3], read: [1, 0, 0], end: [1.03, -0.35, -0.55] },
+      caption: { side: "right", vertical: "bottom" },
+      life: { type: "sea-shimmer", mask: "linear-gradient(180deg, transparent 0 42%, #000 58% 88%, transparent 98%)", opacity: 0.2 }
     },
     {
-      id: "icon-exterior", label: "THE TOWER", eyebrow: "The tower", title: "The Tower",
-      description: "Full tower elevation rising from the horizontal waterfront podium.",
+      id: "icon-exterior", label: "GROUND TO SKY", eyebrow: "Tower + podium", title: "Ground to Sky",
+      description: "The podium folds upward instead of ending at the base, becoming part of the tower’s vertical expression.",
       src: "assets/scenes/02-icon-exterior-1600.webp", mobileSrc: "assets/scenes/02-icon-exterior-900.webp",
-      focus: { desktop: "57% 46%", tabletLandscape: "61% 47%", tabletPortrait: "63% 47%", mobile: "64% 47%" },
-      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1.01, mobile: 1.01 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#8a7d6f", transition: "light-cut", transitionTarget: "waterfront podium",
-      camera: { origin: "40% 72%", start: [1.01, -0.5, 0.4], read: [1.05, 0, -0.2], end: [1.095, 1.2, -0.8] },
-      cameraMobile: { origin: "49% 68%", start: [1.01, -0.2, 0.2], read: [1.038, 0, 0], end: [1.068, 0.6, -0.5] },
-      caption: false
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#82786c", transition: "tower-rise", transitionTarget: "seaward podium sweep at 39% / 72%",
+      camera: { origin: "39% 72%", start: [0.99, -0.35, 0.35], read: [1.003, 0, 0], end: [1.045, 0.9, -0.45] },
+      cameraMobile: { origin: "45% 70%", start: [0.992, -0.15, 0.2], read: [1, 0, 0], end: [1.03, 0.45, -0.25] },
+      caption: { side: "left", vertical: "top" },
+      life: { type: "light-breath", mask: "radial-gradient(circle at 18% 30%, #000 0 19%, transparent 44%)", opacity: 0.2 }
     },
     {
-      id: "promenade", label: "THE WATERFRONT", eyebrow: "04", title: "The Waterfront",
-      description: "Pedestrian promenade approaching the podium along the sea at sunset.",
+      id: "promenade", label: "THE WATERFRONT", eyebrow: "Waterfront", title: "Open to the Horizon",
+      description: "The architecture bends toward the sea, aligning public movement and terraces with uninterrupted Mediterranean views.",
       src: "assets/scenes/03-promenade-1600.webp", mobileSrc: "assets/scenes/03-promenade-900.webp",
-      focus: { desktop: "58% 50%", tabletLandscape: "62% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "wide-frame", mobile: "cover" },
-      tone: "#463f37", transition: "light-cut", transitionTarget: "podium entrance",
-      camera: { origin: "72% 52%", start: [1.018, -0.5, 0.6], read: [1.062, -0.8, 0], end: [1.112, -1.6, -0.8] },
-      cameraMobile: { origin: "69% 52%", start: [1, 0, 0.3], read: [1.025, -0.3, 0], end: [1.052, -0.7, -0.4] },
-      caption: "left"
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#463f37", transition: "horizon-cut", transitionTarget: "glazed podium entrance at 73% / 54%",
+      camera: { origin: "73% 54%", start: [0.99, -0.45, 0.35], read: [1.004, 0, 0], end: [1.046, -0.9, -0.35] },
+      cameraMobile: { origin: "70% 54%", start: [0.992, -0.2, 0.2], read: [1, 0, 0], end: [1.032, -0.5, -0.2] },
+      caption: { side: "left", vertical: "top" },
+      life: { type: "sea-shimmer", mask: "linear-gradient(90deg, #000 0 30%, transparent 47% 100%)", opacity: 0.22 }
     },
     {
-      id: "podium-close", label: "THE PODIUM", eyebrow: "05", title: "The Podium",
-      description: "Planted podium terraces and flowing white ribbons around a reflecting pool.",
+      id: "podium-close", label: "THE FOLDED GROUND", eyebrow: "Podium", title: "The Folded Ground",
+      description: "Landscape, circulation and occupied terraces layer through the podium, extending public life into the tower base.",
       src: "assets/scenes/04-podium-close-1600.webp", mobileSrc: "assets/scenes/04-podium-close-900.webp",
-      focus: { desktop: "57% 51%", tabletLandscape: "61% 51%", tabletPortrait: "61% 52%", mobile: "62% 52%" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#5f615d", transition: "ribbon-wipe", transitionTarget: "sweeping garden ribbon",
-      camera: { origin: "62% 54%", start: [1.015, 0.8, 0.3], read: [1.055, 0, -0.1], end: [1.102, -1.1, -0.5] },
-      cameraMobile: { origin: "62% 56%", start: [1.01, 0.3, 0.2], read: [1.038, 0, 0], end: [1.072, -0.6, -0.3] },
-      caption: "left"
+      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#5f615d", transition: "ribbon-wipe", transitionTarget: "sweeping planted ribbon at 61% / 55%",
+      camera: { origin: "61% 55%", start: [0.992, 0.45, 0.25], read: [1.006, 0, 0], end: [1.048, -0.85, -0.25] },
+      cameraMobile: { origin: "61% 55%", start: [0.994, 0.2, 0.1], read: [1, 0, 0], end: [1.03, -0.4, -0.15] },
+      caption: { side: "left", vertical: "bottom" },
+      life: { type: "water-reflection", mask: "radial-gradient(ellipse at 58% 78%, #000 0 24%, transparent 52%)", opacity: 0.24 }
     },
     {
-      id: "podium-landscape", label: "THE GARDENS", eyebrow: "Gardens", title: "The Gardens",
-      description: "Aerial view across the inhabited podium roof, gardens and sea.",
+      id: "podium-landscape", label: "LANDSCAPE", eyebrow: "Landscape", title: "Landscape as Architecture",
+      description: "Planting and pedestrian routes follow the curved geometry, dissolving the boundary between building and waterfront landscape.",
       src: "assets/scenes/05-podium-landscape-1600.webp", mobileSrc: "assets/scenes/05-podium-landscape-900.webp",
       focus: { desktop: "48% 50%", tabletLandscape: "48% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "wide-frame", mobile: "cover" },
-      tone: "#506169", transition: "ribbon-match", transitionTarget: "white loop and inner garden",
-      camera: { origin: "35% 53%", start: [1.01, -0.7, 0.5], read: [1.05, 0, 0], end: [1.098, 1.1, -0.5] },
-      cameraMobile: { origin: "39% 53%", start: [1, -0.3, 0.2], read: [1.025, 0, 0], end: [1.052, 0.6, -0.2] },
-      caption: false
+      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#506169", transition: "ribbon-match", transitionTarget: "white loop and inner garden at 34% / 52%",
+      camera: { origin: "34% 52%", start: [0.992, -0.45, 0.3], read: [1.004, 0, 0], end: [1.045, 0.85, -0.3] },
+      cameraMobile: { origin: "38% 52%", start: [0.994, -0.2, 0.15], read: [1, 0, 0], end: [1.03, 0.45, -0.15] },
+      caption: { side: "right", vertical: "top" },
+      life: { type: "garden-light", mask: "linear-gradient(180deg, transparent 0 40%, #000 57% 86%, transparent 100%)", opacity: 0.18 }
     },
     {
-      id: "envelope", label: "THE CURVE", eyebrow: "The curve", title: "The Curve",
-      description: "Close view into the podium's continuous white architectural envelope.",
+      id: "envelope", label: "THE ENVELOPE", eyebrow: "Envelope", title: "An Inhabited Envelope",
+      description: "A continuous white ribbon wraps planted terraces and glazing, turning the façade into occupied circulation and shade.",
       src: "assets/scenes/06-envelope-1600.webp", mobileSrc: "assets/scenes/06-envelope-900.webp",
-      focus: { desktop: "57% 50%", tabletLandscape: "60% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "wide-frame", mobile: "cover" },
-      tone: "#56666c", transition: "ribbon-match", transitionTarget: "central architectural void",
-      camera: { origin: "56% 48%", start: [1.012, 0.6, 0.4], read: [1.06, 0, -0.2], end: [1.118, -1, -0.9] },
-      cameraMobile: { origin: "55% 50%", start: [1, 0.2, 0.2], read: [1.03, 0, 0], end: [1.06, -0.5, -0.45] },
-      caption: false
+      presentation: { desktop: "wide-stage", tabletLandscape: "wide-stage", tabletPortrait: "wide-stage", mobile: "wide-stage" },
+      tone: "#56666c", transition: "ribbon-wipe", transitionTarget: "central glazed opening at 54% / 49%",
+      camera: { origin: "54% 49%", start: [0.988, 0.45, 0.25], read: [1.002, 0, 0], end: [1.05, -0.75, -0.45] },
+      cameraMobile: { origin: "54% 49%", start: [0.992, 0.2, 0.1], read: [1, 0, 0], end: [1.032, -0.4, -0.2] },
+      caption: { side: "right", vertical: "top" },
+      life: { type: "sea-shimmer", mask: "linear-gradient(90deg, transparent 0 58%, #000 72% 100%)", opacity: 0.18 }
     },
     {
-      id: "public-court", label: "THE COURT", eyebrow: "08", title: "The Court",
-      description: "Multi-level public court beneath a large curved opening to sky and sea.",
+      id: "public-court", label: "THE SOCIAL HEART", eyebrow: "Public court", title: "The Social Heart",
+      description: "A carved multi-level court pulls daylight, landscape and public activity deep into the podium.",
       src: "assets/scenes/07-public-court-1600.webp", mobileSrc: "assets/scenes/07-public-court-900.webp",
-      focus: { desktop: "52% 50%", tabletLandscape: "53% 50%", tabletPortrait: "54% 50%", mobile: "55% 50%" },
-      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1.01, mobile: 1.01 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#766757", transition: "void-push", transitionTarget: "central court opening",
-      camera: { origin: "53% 46%", start: [1.018, 0, 0.9], read: [1.065, 0, 0], end: [1.12, -0.4, -1.4] },
-      cameraMobile: { origin: "55% 48%", start: [1.012, 0, 0.4], read: [1.045, 0, 0], end: [1.082, -0.2, -0.7] },
-      caption: "left"
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#766757", transition: "void-push", transitionTarget: "central sky opening at 53% / 45%",
+      camera: { origin: "53% 45%", start: [0.99, 0, 0.5], read: [1.004, 0, 0], end: [1.052, -0.2, -0.85] },
+      cameraMobile: { origin: "53% 47%", start: [0.993, 0, 0.25], read: [1, 0, 0], end: [1.034, -0.1, -0.45] },
+      caption: { side: "left", vertical: "bottom" },
+      life: { type: "water-reflection", mask: "radial-gradient(ellipse at 76% 82%, #000 0 20%, transparent 48%)", opacity: 0.22 }
     },
     {
-      id: "atrium", label: "THE ATRIUM", eyebrow: "The atrium", title: "The Atrium",
-      description: "Sea-facing atrium circling a planted water court beneath a sky opening.",
+      id: "atrium", label: "AN OPEN INTERIOR", eyebrow: "Atrium", title: "An Open Interior",
+      description: "The central void connects levels as a sequence of terraces, gardens and shared routes open to the sea.",
       src: "assets/scenes/08-atrium-1600.webp", mobileSrc: "assets/scenes/08-atrium-900.webp",
-      focus: { desktop: "55% 50%", tabletLandscape: "58% 50%", tabletPortrait: "60% 50%", mobile: "61% 50%" },
-      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1.01, mobile: 1.01 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
-      tone: "#6b5b4b", transition: "void-match", transitionTarget: "glazing and sea horizon",
-      camera: { origin: "62% 56%", start: [1.015, 0.9, 0.5], read: [1.055, 0, 0], end: [1.102, -1.1, -0.7] },
-      cameraMobile: { origin: "62% 55%", start: [1.01, 0.4, 0.2], read: [1.04, 0, 0], end: [1.075, -0.6, -0.35] },
-      caption: false
-    },
-    {
-      id: "office", label: "WORK", eyebrow: "10", title: "Work",
-      description: "Panoramic office floor extending laterally toward curved glazing and the bay.",
-      src: "assets/scenes/09-office-1600.webp", mobileSrc: "assets/scenes/09-office-900.webp",
-      focus: { desktop: "54% 54%", tabletLandscape: "58% 56%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "wide-frame", mobile: "cover" },
-      tone: "#3d4447", transition: "glass-wipe", transitionTarget: "panoramic glazing",
-      camera: { origin: "72% 54%", start: [1.012, 1.2, 0.2], read: [1.048, 0, 0], end: [1.082, -1.5, -0.2] },
-      cameraMobile: { origin: "68% 54%", start: [1, 0.5, 0.1], read: [1.022, 0, 0], end: [1.048, -0.7, -0.1] },
-      caption: "left"
+      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#6b5b4b", transition: "void-match", transitionTarget: "sea-facing glazing at 67% / 56%",
+      camera: { origin: "67% 56%", start: [0.992, 0.45, 0.25], read: [1.004, 0, 0], end: [1.046, -0.8, -0.3] },
+      cameraMobile: { origin: "65% 55%", start: [0.994, 0.2, 0.1], read: [1, 0, 0], end: [1.03, -0.4, -0.15] },
+      caption: { side: "right", vertical: "bottom" },
+      life: { type: "water-reflection", mask: "radial-gradient(ellipse at 58% 80%, #000 0 24%, transparent 53%)", opacity: 0.22 }
     },
     {
-      id: "social-lounge", label: "THE LOUNGE", eyebrow: "The lounge", title: "The Lounge",
-      description: "Hospitality lounge beneath a flowing ceiling with long views toward the coast.",
+      id: "social-lounge", label: "SHARED LIFE", eyebrow: "Shared interior", title: "A Shared Living Room",
+      description: "Hospitality spaces extend life beyond the apartment through interiors shaped around view, landscape and social exchange.",
       src: "assets/scenes/10-social-lounge-1600.webp", mobileSrc: "assets/scenes/10-social-lounge-900.webp",
-      focus: { desktop: "55% 56%", tabletLandscape: "58% 57%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "wide-frame", mobile: "cover" },
-      tone: "#433b35", transition: "glass-dissolve", transitionTarget: "central seating and horizon",
-      camera: { origin: "60% 64%", start: [1.014, 0.7, 0.8], read: [1.052, 0, 0], end: [1.09, -0.8, -0.7] },
-      cameraMobile: { origin: "58% 62%", start: [1, 0.3, 0.3], read: [1.024, 0, 0], end: [1.052, -0.4, -0.35] },
-      caption: false
+      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#433b35", transition: "glass-dissolve", transitionTarget: "central seating and coastal glazing at 58% / 58%",
+      camera: { origin: "58% 58%", start: [0.992, 0.35, 0.3], read: [1.004, 0, 0], end: [1.045, -0.65, -0.4] },
+      cameraMobile: { origin: "58% 58%", start: [0.994, 0.15, 0.15], read: [1, 0, 0], end: [1.03, -0.35, -0.2] },
+      caption: { side: "left", vertical: "bottom" },
+      life: { type: "light-breath", mask: "linear-gradient(90deg, transparent 0 24%, #000 48% 100%)", opacity: 0.16 }
     },
     {
-      id: "residence", label: "LIVING", eyebrow: "12", title: "Living",
-      description: "Curved residential interior framing palms and the city beyond full-height glass.",
+      id: "office", label: "WORK", eyebrow: "Workplace", title: "Work Above the Horizon",
+      description: "Flexible workspaces occupy the perimeter, connecting everyday work with panoramic views across the bay.",
+      src: "assets/scenes/09-office-1600.webp", mobileSrc: "assets/scenes/09-office-900.webp",
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
+      tone: "#3d4447", transition: "glass-wipe", transitionTarget: "panoramic glazing at 73% / 54%",
+      camera: { origin: "73% 54%", start: [0.99, 0.6, 0.1], read: [1.002, 0, 0], end: [1.04, -1.05, -0.1] },
+      cameraMobile: { origin: "70% 54%", start: [0.993, 0.25, 0.05], read: [1, 0, 0], end: [1.027, -0.5, -0.05] },
+      caption: { side: "left", vertical: "middle" },
+      life: { type: "horizon-haze", mask: "linear-gradient(180deg, transparent 0 36%, #000 48% 68%, transparent 78%)", opacity: 0.15 }
+    },
+    {
+      id: "residence", label: "LIVING", eyebrow: "Residence", title: "Living with the View",
+      description: "Curved interiors follow the tower envelope, positioning daily life along the panoramic edge between city and sea.",
       src: "assets/scenes/11-residence-1600.webp", mobileSrc: "assets/scenes/11-residence-900.webp",
       focus: { desktop: "50% 52%", tabletLandscape: "50% 52%", tabletPortrait: "52% 51%", mobile: "52% 51%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "portrait-frame", tabletLandscape: "portrait-frame", tabletPortrait: "cover", mobile: "cover" },
+      presentation: { desktop: "portrait-stage", tabletLandscape: "portrait-stage", tabletPortrait: "portrait-stage", mobile: "portrait-stage" },
       tone: "#2c2824", transition: "depth-dissolve", transitionTarget: "curved living room and daylight",
-      camera: { origin: "54% 64%", start: [1, 0, 0.6], read: [1.026, 0, 0], end: [1.056, -0.4, -0.5] },
-      cameraMobile: { origin: "54% 62%", start: [1.015, 0, 0.3], read: [1.038, 0, 0], end: [1.065, -0.2, -0.3] },
-      caption: "left"
+      camera: { origin: "34% 48%", start: [0.99, 0, 0.35], read: [1.002, 0, 0], end: [1.038, 0.45, -0.35] },
+      cameraMobile: { origin: "38% 48%", start: [0.994, 0, 0.15], read: [1, 0, 0], end: [1.025, 0.25, -0.18] },
+      caption: { side: "left", vertical: "middle" },
+      life: { type: "garden-light", mask: "linear-gradient(180deg, transparent 0 34%, #000 48% 76%, transparent 88%)", opacity: 0.14 }
     },
     {
-      id: "sky-lounge", label: "THE HORIZON", eyebrow: "The horizon", title: "The Horizon",
-      description: "Vertical sea lounge with a suspended chandelier and uninterrupted Mediterranean horizon.",
+      id: "sky-lounge", label: "LIFE AT THE EDGE", eyebrow: "Sea lounge", title: "Life at the Edge",
+      description: "Living spaces gather around the horizon, where architecture becomes a frame for light, sea and social life.",
       src: "assets/scenes/12-sky-lounge-1600.webp", mobileSrc: "assets/scenes/12-sky-lounge-900.webp",
       focus: { desktop: "50% 52%", tabletLandscape: "52% 52%", tabletPortrait: "54% 52%", mobile: "55% 52%" },
       scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
-      presentation: { desktop: "portrait-frame", tabletLandscape: "portrait-frame", tabletPortrait: "cover", mobile: "cover" },
+      presentation: { desktop: "portrait-stage", tabletLandscape: "portrait-stage", tabletPortrait: "portrait-stage", mobile: "portrait-stage" },
       tone: "#2e2925", transition: "ceiling-match", transitionTarget: "sea horizon",
-      camera: { origin: "52% 60%", start: [1, 0, 0.5], read: [1.024, 0, 0], end: [1.05, -0.3, -0.6] },
-      cameraMobile: { origin: "55% 58%", start: [1.012, 0, 0.3], read: [1.034, 0, 0], end: [1.06, -0.2, -0.4] },
-      caption: false
+      camera: { origin: "52% 62%", start: [0.992, 0, 0.3], read: [1.002, 0, 0], end: [1.036, -0.2, -0.4] },
+      cameraMobile: { origin: "52% 60%", start: [0.994, 0, 0.15], read: [1, 0, 0], end: [1.024, -0.1, -0.2] },
+      caption: { side: "left", vertical: "middle" },
+      life: { type: "sea-shimmer", mask: "linear-gradient(180deg, transparent 0 47%, #000 58% 82%, transparent 92%)", opacity: 0.18 }
     },
     {
-      id: "waterfront-coda", label: "BENGHAZI", eyebrow: "14", title: "The Horizon",
-      description: "Final waterfront view of the complete tower, podium, sea and Benghazi skyline.",
+      id: "waterfront-coda", label: "CITY TO SEA", eyebrow: "Waterfront coda", title: "City to Sea",
+      description: "The completed composition mediates between Benghazi and the Mediterranean through one continuous inhabited ground.",
       src: "assets/scenes/13-waterfront-coda-1600.webp", mobileSrc: "assets/scenes/13-waterfront-coda-900.webp",
-      focus: { desktop: "55% 48%", tabletLandscape: "57% 48%", tabletPortrait: "55% 48%", mobile: "54% 48%" },
-      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1.01, mobile: 1.01 },
-      presentation: { desktop: "cover", tabletLandscape: "cover", tabletPortrait: "cover", mobile: "cover" },
+      focus: { desktop: "50% 50%", tabletLandscape: "50% 50%", tabletPortrait: "50% 50%", mobile: "50% 50%" },
+      scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+      presentation: { desktop: "balanced-stage", tabletLandscape: "balanced-stage", tabletPortrait: "balanced-stage", mobile: "balanced-stage" },
       tone: "#657c8a", transition: "horizon-dissolve", transitionTarget: "tower and open sea",
-      camera: { origin: "55% 52%", start: [1.018, 0.8, 0.5], read: [1.052, 0, 0], end: [1.086, -0.6, -0.8] },
-      cameraMobile: { origin: "55% 52%", start: [1.012, 0.3, 0.3], read: [1.038, 0, 0], end: [1.065, -0.3, -0.5] },
-      caption: "right"
+      camera: { origin: "55% 52%", start: [0.99, 0.45, 0.35], read: [1.002, 0, 0], end: [1.034, -0.35, -0.45] },
+      cameraMobile: { origin: "55% 52%", start: [0.994, 0.2, 0.15], read: [1, 0, 0], end: [1.022, -0.2, -0.25] },
+      caption: { side: "right", vertical: "top" },
+      life: { type: "sea-shimmer", mask: "linear-gradient(90deg, #000 0 46%, transparent 68% 100%)", opacity: 0.2 }
     }
   ]
 };
@@ -808,19 +822,27 @@ const SceneDeck = {
       img.dataset.mobileSrc = scene.mobileSrc;
       media.appendChild(img);
 
+      const life = document.createElement("div");
+      life.className = "scene-life";
+      life.setAttribute("aria-hidden", "true");
+      if (scene.life) life.dataset.life = scene.life.type;
+
       if (scene.caption) {
         const caption = document.createElement("figcaption");
         caption.className = "scene-caption";
-        caption.dataset.side = scene.caption || "left";
+        caption.dataset.side = scene.caption.side || "left";
+        caption.dataset.vertical = scene.caption.vertical || "bottom";
         const indexLabel = document.createElement("span");
         indexLabel.className = "scene-caption__index u-label";
         indexLabel.textContent = `${String(index + 1).padStart(2, "0")} — ${scene.eyebrow}`;
         const title = document.createElement("h2");
         title.textContent = scene.title;
-        caption.append(indexLabel, title);
-        layer.append(media, caption);
+        const statement = document.createElement("p");
+        statement.textContent = scene.description;
+        caption.append(indexLabel, title, statement);
+        layer.append(media, life, caption);
       } else {
-        layer.appendChild(media);
+        layer.append(media, life);
       }
       stack.appendChild(layer);
       this.layers.push(layer);
@@ -841,6 +863,8 @@ const SceneDeck = {
       layer.style.setProperty("--scene-focus", focus);
       layer.style.setProperty("--scene-scale", String(scale || 1));
       layer.style.setProperty("--scene-tone", scene.tone || "#101215");
+      layer.style.setProperty("--life-mask", scene.life?.mask || "none");
+      layer.style.setProperty("--life-opacity", String(scene.life?.opacity || 0));
       layer.dataset.presentation = presentation;
     });
   },
@@ -848,7 +872,10 @@ const SceneDeck = {
   refreshSources() {
     this.loaded.forEach((index) => {
       const img = $("img", this.layers[index]);
-      if (img) img.src = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
+      if (!img) return;
+      const source = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
+      img.src = source;
+      this.layers[index].style.setProperty("--scene-image", `url("${source}")`);
     });
   },
 
@@ -856,7 +883,9 @@ const SceneDeck = {
     if (index <= 0 || index >= this.layers.length || this.loaded.has(index)) return;
     const img = $("img", this.layers[index]);
     if (!img) return;
-    img.src = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
+    const source = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
+    img.src = source;
+    this.layers[index].style.setProperty("--scene-image", `url("${source}")`);
     this.loaded.add(index);
   },
 
@@ -872,6 +901,7 @@ const SceneDeck = {
       if (keep.has(loadedIndex)) return;
       const img = $("img", this.layers[loadedIndex]);
       if (img) img.removeAttribute("src");
+      this.layers[loadedIndex].style.removeProperty("--scene-image");
       this.loaded.delete(loadedIndex);
     });
   },
@@ -898,6 +928,10 @@ const SceneDeck = {
     switch (type) {
       case "matched-push":
         return { autoAlpha: 0, scale: 0.985 };
+      case "tower-rise":
+        return { autoAlpha: 1, clipPath: "inset(100% 0 0 0)", scale: 0.994 };
+      case "horizon-cut":
+        return { autoAlpha: 1, clipPath: "inset(0 0 100% 0)", scale: 1.004 };
       case "ribbon-wipe":
       case "ribbon-match":
         return { autoAlpha: 1, clipPath: "polygon(0 86%, 30% 78%, 68% 94%, 100% 82%, 100% 100%, 0 100%)" };
@@ -1128,6 +1162,7 @@ const ScrollFramework = {
     gsap.set(layers[0], { autoAlpha: 1 });
     gsap.set(layers.slice(1), { autoAlpha: 0 });
     gsap.set($$(".scene-caption"), { opacity: 0, y: 14 });
+    gsap.set($$(".scene-life"), { opacity: 0, xPercent: -1 });
 
     const tl = gsap.timeline({
       defaults: { ease: "none" },
@@ -1150,8 +1185,11 @@ const ScrollFramework = {
       const layer = layers[index];
       const media = index === 0 ? $(".hero-media") : $(".cinema-media img", layer);
       const caption = $(".scene-caption", layer);
+      const life = $(".scene-life", layer);
       const camera = SceneDeck.cameraFor(scene);
-      const cameraDuration = Env.reducedMotion ? segment * 0.5 : segment * 0.68;
+      const arriveDuration = segment * 0.22;
+      const readDuration = segment * 0.42;
+      const moveDuration = segment - arriveDuration - readDuration;
 
       tl.addLabel(scene.id, at)
         .fromTo(
@@ -1166,8 +1204,8 @@ const ScrollFramework = {
             scale: camera.read[0],
             xPercent: camera.read[1],
             yPercent: camera.read[2],
-            duration: cameraDuration,
-            ease: "none",
+            duration: arriveDuration,
+            ease: "power1.out",
             immediateRender: index === 0
           },
           at
@@ -1175,13 +1213,24 @@ const ScrollFramework = {
         .to(
           media,
           {
+            scale: camera.read[0],
+            xPercent: camera.read[1],
+            yPercent: camera.read[2],
+            duration: readDuration,
+            ease: "none"
+          },
+          at + arriveDuration
+        )
+        .to(
+          media,
+          {
             scale: Env.reducedMotion ? camera.read[0] : camera.end[0],
             xPercent: Env.reducedMotion ? camera.read[1] : camera.end[1],
             yPercent: Env.reducedMotion ? camera.read[2] : camera.end[2],
-            duration: segment - cameraDuration,
+            duration: moveDuration,
             ease: "power1.in"
           },
-          at + cameraDuration
+          at + arriveDuration + readDuration
         );
 
       if (index === 0) {
@@ -1211,12 +1260,42 @@ const ScrollFramework = {
         tl.fromTo(
           caption,
           { opacity: 0, y: Env.reducedMotion ? 0 : 14 },
-          { opacity: 1, y: 0, duration: segment * 0.34, ease: "power2.out", immediateRender: false },
-          at + segment * 0.16
+          { opacity: 1, y: 0, duration: segment * 0.16, ease: "power2.out", immediateRender: false },
+          at + segment * 0.12
+        ).to(
+          caption,
+          { opacity: 0, y: Env.reducedMotion ? 0 : -6, duration: segment * 0.12, ease: "power1.in" },
+          at + segment * 0.52
         );
       }
 
-      if (["light-cut", "horizon-dissolve"].includes(scene.transition)) {
+      if (life && scene.life) {
+        tl.fromTo(
+          life,
+          { opacity: 0, xPercent: -1.2, yPercent: 0.25 },
+          {
+            opacity: Env.reducedMotion ? scene.life.opacity * 0.45 : scene.life.opacity,
+            xPercent: 0,
+            yPercent: 0,
+            duration: arriveDuration + readDuration,
+            ease: "sine.out",
+            immediateRender: false
+          },
+          at
+        ).to(
+          life,
+          {
+            opacity: Env.reducedMotion ? scene.life.opacity * 0.35 : scene.life.opacity * 0.72,
+            xPercent: Env.reducedMotion ? 0 : 1.2,
+            yPercent: Env.reducedMotion ? 0 : -0.2,
+            duration: moveDuration,
+            ease: "sine.inOut"
+          },
+          at + arriveDuration + readDuration
+        );
+      }
+
+      if (["light-cut", "horizon-cut", "horizon-dissolve"].includes(scene.transition)) {
         tl.fromTo(
           flare,
           { opacity: 0 },
