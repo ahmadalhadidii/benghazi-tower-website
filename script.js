@@ -18,14 +18,14 @@
 
 const experienceConfig = {
   /* Opening */
-  descentStartScale: 1.065,
+  descentStartScale: 1.018,
   introProfiles: {
-    desktop:        { dprCap: 2,    cloudCount: 3, mistCount: 2, skyDrift: true  },
-    tabletLandscape:{ dprCap: 1.5,  cloudCount: 2, mistCount: 1, skyDrift: false },
-    tabletPortrait: { dprCap: 1.5,  cloudCount: 2, mistCount: 1, skyDrift: false },
+    desktop:        { dprCap: 2,    cloudCount: 2, mistCount: 2, skyDrift: false },
+    tabletLandscape:{ dprCap: 1.5,  cloudCount: 1, mistCount: 1, skyDrift: false },
+    tabletPortrait: { dprCap: 1.5,  cloudCount: 1, mistCount: 1, skyDrift: false },
     tabletLite:     { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
-    mobile:         { dprCap: 1.25, cloudCount: 2, mistCount: 1, skyDrift: false },
-    lite:           { dprCap: 1,    cloudCount: 1, mistCount: 0, skyDrift: false }
+    mobile:         { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
+    lite:           { dprCap: 1,    cloudCount: 0, mistCount: 0, skyDrift: false }
   },
 
   /* Hero render */
@@ -40,7 +40,7 @@ const experienceConfig = {
   heroObjectPositionMobile: "50% 50%",
 
   /* Atmosphere */
-  skyDriftEnabled:    true,
+  skyDriftEnabled:    false,
   skyDriftAmount:     1.1,
   skyDriftDuration:   190,
   skyDriftOpacity:    0.3,
@@ -643,9 +643,10 @@ const HeroFilm = {
       return;
     }
 
+    gsap.set($(".hero-media"), { clearProps: "transform" });
     this.syncTracking(true);
     body.dataset.film = "playing";
-    gsap.to(this.el, { opacity: 1, duration: 0.48, ease: "power1.inOut" });
+    gsap.to(this.el, { opacity: 1, duration: 0.08, ease: "none" });
 
     /* Start the picture deterministically, then request the original soundtrack.
        Browsers that disallow the unmute keep the film moving and expose a tiny control. */
@@ -679,6 +680,10 @@ const HeroFilm = {
     const portrait = Env.tabletPortrait || (Env.mobile && window.innerHeight > window.innerWidth);
     const duration = Number.isFinite(this.el?.duration) ? this.el.duration : 8.083;
     const progress = this.el && duration ? Math.min(this.el.currentTime / duration, 1) : 0;
+    if (!portrait) {
+      gsap.set(this.frame, { clearProps: "transform" });
+      return;
+    }
     const xPercent = portrait ? -53.5 - (2 * progress) : 0;
     gsap.set(this.frame, { xPercent });
 
@@ -812,17 +817,17 @@ const Atmosphere = {
       .filter((zone) => getComputedStyle(zone).display !== "none")
       .slice(0, profile.mistCount);
     const mistRoutes = [
-      { opacity: Env.mobile ? 0.055 : 0.075, fromX: -1.2, toX: 1.5, fromY:  0.25, toY: -0.18, duration: 18.5 },
-      { opacity: 0.052, fromX: 1.0, toX: -1.15, fromY: -0.08, toY: 0.2, duration: 16.8 }
+      { opacity: Env.mobile ? 0.05 : 0.065, fromX: -0.8, toX: 1.05, fromY: 0.18, toY: -0.12, duration: 24 },
+      { opacity: 0.05, fromX: 0.7, toX: -0.8, fromY: -0.06, toY: 0.14, duration: 21 }
     ];
     mistZones.forEach((mist, i) => {
       const route = mistRoutes[i] || mistRoutes[0];
-      gsap.set(mist, { opacity: route.opacity, xPercent: route.fromX, yPercent: route.fromY, scale: 1.02 });
+      gsap.set(mist, { opacity: route.opacity, xPercent: route.fromX, yPercent: route.fromY, scale: 1.008 });
       this.tweens.push(
         gsap.to(mist, {
           xPercent: route.toX,
           yPercent: route.toY,
-          scale: 1.045,
+          scale: 1.022,
           duration: Env.reducedMotion ? route.duration * 3 : route.duration,
           ease: "sine.inOut",
           yoyo: true,
@@ -859,7 +864,6 @@ const Intro = {
     const media = $(".hero-media");
     const stage = $(".hero-reveal");
     const haze  = $("#haze");
-    const far   = $(".cloud--far");
     const mid   = $(".cloud--mid");
     const near  = $(".cloud--near");
 
@@ -872,66 +876,57 @@ const Intro = {
     HeroFilm.syncTracking(false);
 
     if (Env.introMode === "lite")    return this.buildReduced(media, haze);
-    if (Env.mobile)                  return this.buildMobile(media, stage, haze, far, mid);
-    if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, far, mid);
+    if (Env.mobile)                  return this.buildMobile(media, stage, haze, mid);
+    if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, mid);
 
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
 
     tl.set(haze, { opacity: 0.99 })
-      .set(far,  { opacity: 0.68, scale: 1.01, xPercent: -0.8, yPercent: -0.5 })
-      .set(mid,  { opacity: 0.84, scale: 1.045, xPercent: 1.2, yPercent: 0.4 })
-      .set(near, { opacity: 0.92, scale: 1.08, xPercent: -1.6, yPercent: -0.7 })
+      .set(mid,  { opacity: 0.4, scale: 1, xPercent: 0.5, yPercent: 0.2 })
+      .set(near, { opacity: 0.28, scale: 1, xPercent: -0.6, yPercent: -0.2 })
       .to(haze,  { opacity: 0.95, duration: 0.55, ease: "none" }, 0)
       .to(haze,  { opacity: 0.7, duration: 0.55, ease: "power1.inOut" }, 0.55)
       .to(haze,  { opacity: 0.18, duration: 1.1, ease: "power1.inOut" }, 1.1)
-      .to(haze,  { opacity: 0, duration: 1.2, ease: "power1.inOut" }, 2.2)
-      .to(near,  { scale: 1.4, xPercent: -3.8, yPercent: 7.5, opacity: 0, duration: 2.25, ease: "power1.inOut" }, 0.05)
-      .to(mid,   { scale: 1.27, xPercent: 3.2, yPercent: 4.8, opacity: 0, duration: 3.05, ease: "power1.inOut" }, 0.28)
-      .to(far,   { scale: 1.16, xPercent: -1.8, yPercent: 2.8, opacity: 0, duration: 3.18, ease: "power1.inOut" }, 0.2)
-      .to(media, { scale: 1, yPercent: 0, duration: 3.45, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.42);
+      .to(haze,  { opacity: 0, duration: 0.88, ease: "power1.inOut" }, 2.2)
+      .to(near,  { scale: 1.085, xPercent: -1.5, yPercent: 2.4, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.1)
+      .to(mid,   { scale: 1.07, xPercent: 1.4, yPercent: 1.8, opacity: 0, duration: 2.9, ease: "power1.inOut" }, 0.18)
+      .to(media, { scale: 1, yPercent: 0, duration: 3.02, ease: "power1.inOut" }, 0)
+      .call(() => HeroFilm.start(), null, 3.16);
 
     this.appendReveal(tl, 3.55);
     this.tl = tl;
     return tl;
   },
 
-  buildTablet(media, stage, haze, far, mid) {
+  buildTablet(media, stage, haze, mid) {
     const tl      = gsap.timeline({ onComplete: () => Experience.finishIntro() });
-    const compact = Env.introMode === "tabletLite";
     gsap.set(stage, { opacity: 1 });
     tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.82, scale: 1.05, xPercent: 1.4, yPercent: 0.5 })
-      .to(mid,   { scale: 1.26, xPercent: 3.1, yPercent: 4.6, opacity: 0, duration: 2.85, ease: "power1.inOut" }, 0.12)
+      .set(mid,  { opacity: 0.38, scale: 1, xPercent: 0.5, yPercent: 0.2 })
+      .to(mid,   { scale: 1.07, xPercent: 1.35, yPercent: 1.8, opacity: 0, duration: 2.75, ease: "power1.inOut" }, 0.12)
       .to(haze,  { opacity: 0.94, duration: 0.5, ease: "none" }, 0)
       .to(haze,  { opacity: 0.58, duration: 0.75, ease: "power1.inOut" }, 0.5)
       .to(haze,  { opacity: 0.16, duration: 0.9, ease: "power1.inOut" }, 1.25)
       .to(haze,  { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 3.05, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.02);
-    if (!compact) {
-      tl.set(far, { opacity: 0.64, scale: 1.01, xPercent: -0.8, yPercent: -0.4 }, 0)
-        .to(far,  { scale: 1.15, xPercent: -1.8, yPercent: 2.7, opacity: 0, duration: 3.0, ease: "power1.inOut" }, 0.2);
-    }
+      .to(media, { scale: 1, yPercent: 0, duration: 2.92, ease: "power1.inOut" }, 0)
+      .call(() => HeroFilm.start(), null, 3.08);
     this.appendReveal(tl, 3.42, 0.82);
     this.tl = tl;
     return tl;
   },
 
-  buildMobile(media, stage, haze, far, mid) {
+  buildMobile(media, stage, haze, mid) {
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
     gsap.set(stage, { opacity: 1 });
     tl.set(haze, { opacity: 0.99 })
-      .set(far,  { opacity: 0.64, scale: 1.01, xPercent: -0.8, yPercent: -0.4 })
-      .set(mid,  { opacity: 0.82, scale: 1.05, xPercent: 1.4, yPercent: 0.5 })
-      .to(mid,   { scale: 1.24, xPercent: 2.8, yPercent: 4.4, opacity: 0, duration: 2.7, ease: "power1.inOut" }, 0.08)
-      .to(far,   { scale: 1.14, xPercent: -1.7, yPercent: 2.5, opacity: 0, duration: 2.9, ease: "power1.inOut" }, 0.18)
+      .set(mid,  { opacity: 0.34, scale: 1, xPercent: 0.4, yPercent: 0.2 })
+      .to(mid,   { scale: 1.06, xPercent: 1.2, yPercent: 1.6, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.08)
       .to(haze,  { opacity: 0.92, duration: 0.45, ease: "none" }, 0)
       .to(haze,  { opacity: 0.62, duration: 0.7, ease: "power1.inOut" }, 0.45)
       .to(haze,  { opacity: 0.16, duration: 1.0, ease: "power1.inOut" }, 1.15)
       .to(haze,  { opacity: 0, duration: 0.75, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 2.92, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 2.9);
+      .to(media, { scale: 1, yPercent: 0, duration: 2.72, ease: "power1.inOut" }, 0)
+      .call(() => HeroFilm.start(), null, 2.86);
     this.appendReveal(tl, 3.3, 0.76);
     this.tl = tl;
     return tl;
@@ -1186,15 +1181,17 @@ const SceneNavigation = {
       const caption = $(".scene-caption", layer);
       const life    = $(".scene-life", layer);
       const active  = index === activeIndex;
+      const preserveLiveHero = index === 0 && active && HeroFilm.started && !HeroFilm.ended;
 
       gsap.killTweensOf([layer, media, caption, life].filter(Boolean));
       gsap.set(layer, { autoAlpha: active ? 1 : 0, scale: 1, zIndex: active ? 5 : 1 });
       gsap.set(media, {
         transformOrigin: camera.origin,
-        scale:    camera.read[0],
-        xPercent: camera.read[1],
-        yPercent: camera.read[2]
+        scale:    preserveLiveHero ? 1 : camera.read[0],
+        xPercent: preserveLiveHero ? 0 : camera.read[1],
+        yPercent: preserveLiveHero ? 0 : camera.read[2]
       });
+      if (preserveLiveHero) gsap.set(media, { clearProps: "transform" });
       if (caption) gsap.set(caption, { opacity: active ? 1 : 0, y: 0 });
       if (life) {
         const opacity = scene.life ? (Env.reducedMotion ? scene.life.opacity * 0.45 : scene.life.opacity) : 0;

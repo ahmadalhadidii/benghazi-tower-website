@@ -22,14 +22,22 @@ async function captureArrival(page, viewport, name) {
       const videoBox = video.getBoundingClientRect();
       const posterStyle = getComputedStyle(poster);
       const videoStyle = getComputedStyle(video);
+      const mediaStyle = getComputedStyle(document.querySelector(".hero-media"));
+      const mediaMatrix = mediaStyle.transform === "none" ? null : new DOMMatrixReadOnly(mediaStyle.transform);
       return {
         t,
         state: document.body.dataset.state,
         intro: { time: Intro.tl?.time(), duration: Intro.tl?.duration(), paused: Intro.tl?.paused() },
         filmState: document.body.dataset.film || "playing",
-        heroTransform: getComputedStyle(document.querySelector(".hero-media")).transform,
+        heroTransform: mediaStyle.transform,
+        heroScale: mediaMatrix ? Math.hypot(mediaMatrix.a, mediaMatrix.b) : 1,
+        mediaFilter: mediaStyle.filter,
         filmTransform: getComputedStyle(document.querySelector(".hero-film")).transform,
         clouds: [...document.querySelectorAll(".cloud")].map((el) => Number(getComputedStyle(el).opacity)),
+        cloudLayers: [...document.querySelectorAll(".cloud")].map((el) => {
+          const style = getComputedStyle(el);
+          return { display: style.display, opacity: Number(style.opacity), backgroundImage: style.backgroundImage };
+        }),
         mist: [...document.querySelectorAll(".hero-mist")].map((el) => Number(getComputedStyle(el).opacity)),
         hud: Number(getComputedStyle(document.querySelector(".hud")).opacity),
         titleLine: getComputedStyle(document.querySelector(".hero-type__title .line > span")).transform,
@@ -39,10 +47,16 @@ async function captureArrival(page, viewport, name) {
           duration: video.duration,
           readyState: video.readyState,
           paused: video.paused,
+          width: video.videoWidth,
+          height: video.videoHeight,
+          filter: videoStyle.filter,
           objectFit: videoStyle.objectFit,
           objectPosition: videoStyle.objectPosition
         },
         poster: {
+          width: poster.naturalWidth,
+          height: poster.naturalHeight,
+          filter: posterStyle.filter,
           objectFit: posterStyle.objectFit,
           objectPosition: posterStyle.objectPosition
         },
@@ -92,6 +106,15 @@ function expectSeamlessMedia(result) {
   expect(handoff.video.opacity).toBeGreaterThan(0.25);
   expect(handoff.video.objectFit).toBe(handoff.poster.objectFit);
   expect(handoff.video.objectPosition).toBe(handoff.poster.objectPosition);
+  expect(handoff.video.filter).toBe("none");
+  expect(handoff.poster.filter).toBe("none");
+  expect(handoff.mediaFilter).toBe("none");
+  expect(handoff.heroScale).toBeCloseTo(1, 4);
+  expect(handoff.heroTransform).toBe("none");
+  expect(handoff.video.width).toBe(1280);
+  expect(handoff.video.height).toBe(720);
+  expect(handoff.poster.width).toBe(1280);
+  expect(handoff.poster.height).toBe(720);
   expect(Math.max(...Object.values(handoff.alignment))).toBeLessThan(0.5);
 }
 
@@ -112,7 +135,11 @@ for (const [name, viewport] of [
   test(`${name} arrival preserves the cinematic handoff`, async ({ page }) => {
     test.setTimeout(45000);
     const result = await captureArrival(page, viewport, name);
-    expect(result.readings[0].clouds.filter((value) => value > 0.5).length).toBeGreaterThanOrEqual(name === "desktop" ? 3 : 2);
+    const visibleAtmosphere = result.readings[0].cloudLayers.filter((layer) => layer.display !== "none" && layer.opacity > 0.15);
+    expect(visibleAtmosphere.length).toBe(name === "mobile" ? 1 : 2);
+    expect(visibleAtmosphere.every((layer) => !layer.backgroundImage.includes("url("))).toBeTruthy();
+    expect(result.readings[0].heroScale).toBeGreaterThan(1);
+    expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.04);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
     expect(result.readings[4].clouds.every((value) => value < 0.1)).toBeTruthy();
     expectSeamlessMedia(result);
