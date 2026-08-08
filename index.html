@@ -26,8 +26,6 @@
     <span id="loader-value">000</span>
   </div>
 
-  <!-- Shown only if the render is not on disk. The opening is built around
-       one specific image; it asks for that image rather than inventing one. -->
   <div class="loader__ask" id="loader-ask" hidden>
     <label class="loader__pick u-label">
       Select the render
@@ -37,25 +35,23 @@
   </div>
 </div>
 
-<!-- ── Opening: inside the cloud layer. Nothing else is on screen. ───────── -->
+<!-- ── Opening: inside the cloud layer ───────────────────────────────────── -->
 <div class="flythrough" id="flythrough" aria-hidden="true">
   <div class="cloud cloud--far"></div>
   <div class="cloud cloud--mid"></div>
   <div class="cloud cloud--near"></div>
-  <div class="cloud cloud--foreground"></div>
 </div>
 <div class="haze" id="haze" aria-hidden="true"></div>
 
 <!-- ── Experience ────────────────────────────────────────────────────────── -->
 <main class="experience" id="experience">
 
-  <!-- Scene 01 — arrival + exterior approach -->
-  <section class="scene scene--hero" id="scene-project" data-scene="heroArrival" aria-labelledby="project-title">
+  <!-- Scene 01 — arrival -->
+  <section class="scene scene--hero" id="scene-arrival" aria-labelledby="project-title">
 
     <div class="hero-stage">
       <div class="hero-fallback" aria-hidden="true"></div>
 
-      <!-- masked so the sky of the render resolves before the land -->
       <div class="hero-reveal cinema-layer cinema-layer--hero" data-scene-index="0">
         <div class="hero-media">
           <img
@@ -65,24 +61,14 @@
             decoding="async"
             fetchpriority="high">
 
-          <!-- The resting atmosphere is this render's own sky, drifting against
-               itself. Masked to the sky band, so the architecture never moves. -->
           <img class="sky-drift js-hero-src" alt="" aria-hidden="true" decoding="async">
 
           <div class="hero-mist hero-mist--sea" aria-hidden="true"></div>
           <div class="hero-mist hero-mist--coast" aria-hidden="true"></div>
-          <div class="hero-mist hero-mist--foreground" aria-hidden="true"></div>
-          <div class="sky-breath" aria-hidden="true"></div>
         </div>
       </div>
 
       <div class="scene-stack" id="scene-stack" aria-live="off"></div>
-      <div class="transition-flare" aria-hidden="true"></div>
-
-      <!-- Bird slot. Filled at runtime from a transparent WebM or a frame
-           sequence; if neither exists it is removed, never faked.
-           See assets/atmosphere/README.md -->
-      <div class="bird" id="bird" aria-hidden="true"></div>
 
       <div class="hero-edge" aria-hidden="true"></div>
     </div>
@@ -101,7 +87,7 @@
 
 </main>
 
-<!-- ── Interface — revealed only after the camera arrives ─────────────────── -->
+<!-- ── Interface ─────────────────────────────────────────────────────────── -->
 <div class="hud">
   <p class="hud__wordmark u-label">Benghazi Tower</p>
 
@@ -110,31 +96,28 @@
     <span class="hud__menu-glyph" aria-hidden="true"><i></i><i></i></span>
   </button>
 
-  <button class="hud__cue u-label" type="button" aria-label="Scroll to enter the project">
+  <button class="hud__cue u-label" id="hud-cue" type="button" aria-label="Navigate to next scene">
     <span class="hud__cue-line" aria-hidden="true"></span>
-    <span>Scroll to enter</span>
+    <span id="hud-cue-label">Scroll to explore</span>
   </button>
 
   <div class="hud__progress" aria-hidden="true">
-    <span class="hud__progress-label u-label">01 / 14 — THE ARRIVAL</span>
+    <span class="hud__progress-label u-label" id="hud-progress-label"></span>
     <span class="hud__progress-track"><span class="hud__progress-bar"></span></span>
   </div>
 </div>
 
-<!-- ── Menu ──────────────────────────────────────────────────────────────── -->
-<div class="signature u-label" aria-label="2026, BIM Lab, Ahmad Alhadidii">
+<!-- ── Signature ─────────────────────────────────────────────────────────── -->
+<div class="signature u-label" aria-label="2026, BIM Lab">
   <span>2026</span>
   <span>BIM Lab</span>
-  <strong>Ahmad Alhadidii</strong>
 </div>
 
+<!-- ── Menu ──────────────────────────────────────────────────────────────── -->
 <nav class="menu" id="menu" data-open="false" aria-hidden="true" aria-label="Project sections">
   <button class="menu__close u-label" id="menu-close" type="button">Close</button>
-  <ul class="menu__list">
-    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="0"><span class="menu__index">01</span>Mixed-Use Tower</button></li>
-    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="3"><span class="menu__index">02</span>Continuous Ground</button></li>
-    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="7"><span class="menu__index">03</span>Courtyard Interior</button></li>
-    <li class="menu__item"><button class="menu__link" type="button" data-scene-target="13"><span class="menu__index">04</span>Final Tower</button></li>
+  <ul class="menu__list" id="menu-list">
+    <!-- populated by JS from scene config -->
   </ul>
   <p class="menu__foot u-label">Benghazi, Libya</p>
 </nav>

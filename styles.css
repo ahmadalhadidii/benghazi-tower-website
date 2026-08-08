@@ -1,12 +1,6 @@
 /* ==========================================================================
    BENGHAZI TOWER — A NEW WAY OF LIVING
    styles.css
-
-   Palette is sampled from the supplied exterior render only:
-   deep black (space / cinematic edge), warm off-white (sunlit concrete),
-   muted stone, controlled grey (infrastructure), pale sky, dawn warmth
-   off the water. No accent colour is introduced that is not already
-   present in the render.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -39,14 +33,13 @@
   --safe-left: max(var(--edge), env(safe-area-inset-left));
   --hairline: rgba(239, 233, 223, 0.28);
 
-  /* Hero framing — every positional decision for the render lives here.
-     Change these, not the markup, to re-frame the tower. */
+  /* Hero framing */
   --hero-object-position: 52% 46%;
   --hero-object-fit: cover;
   --hero-scale: 1;
   --hero-shift-y: 0px;
 
-  /* Atmosphere band placement, expressed against the render's own horizon */
+  /* Atmosphere band placement */
   --horizon-y: 14%;
   --sky-band-top: 0%;
   --sky-band-bottom: 34%;
@@ -88,22 +81,24 @@ body {
   overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  touch-action: pan-y;
 }
 
-/* No scrolling until the opening sequence has handed control to the user. */
+/* Lock during loading/intro */
 body[data-state="loading"],
 body[data-state="intro"] {
   overflow: hidden;
   height: 100%;
+  touch-action: none;
 }
 
+/* Ready state: fixed canvas, no scroll, intercept all touch via JS */
 body[data-state="ready"] {
   width: 100%;
   height: 100vh;
   height: 100svh;
   overflow: hidden;
   touch-action: none;
+  -ms-touch-action: none;
 }
 
 img {
@@ -176,7 +171,7 @@ a {
   text-transform: uppercase;
   color: var(--stone);
   opacity: 0.85;
-  padding-left: 0.42em; /* optical compensation for the tracking */
+  padding-left: 0.42em;
 }
 
 .loader__track {
@@ -248,10 +243,6 @@ a {
    4. Cloud fly-through + haze
    -------------------------------------------------------------------------- */
 
-/* The plates are cut from the render's own atmosphere — the fog bank in the
-   lower frame, the mist over the sea, the cloud band on the horizon. Same sun,
-   same colour temperature, same grain. See assets/atmosphere/README.md. */
-
 .flythrough {
   position: fixed;
   inset: 0;
@@ -286,13 +277,7 @@ a {
   background-image: var(--cloud-near-image, url("assets/atmosphere/cloud-near-v2.webp"));
 }
 
-.cloud--foreground {
-  inset: -30%;
-  background-image: var(--cloud-near-image, url("assets/atmosphere/cloud-near-v2.webp"));
-  background-position: 74% 42%;
-}
-
-/* Select compact plates at CSS parse time, before application JavaScript runs. */
+/* Tablet: 2 layers max */
 @media (min-width: 601px) and (max-width: 1200px) {
   :root {
     --cloud-far-image: url("assets/atmosphere/cloud-far-tablet.webp");
@@ -301,6 +286,7 @@ a {
   }
 }
 
+/* Mobile: 2 lightweight layers */
 @media (max-width: 600px) {
   :root {
     --cloud-far-image: url("assets/atmosphere/cloud-far-mobile.webp");
@@ -309,13 +295,22 @@ a {
   }
 }
 
-/* High-pixel portrait tablets use the same one-plate fallback selected by JS. */
+/* Tablet: suppress third cloud layer */
+html[data-viewport="tabletLandscape"] .cloud--near,
+html[data-viewport="tabletPortrait"] .cloud--near,
+html[data-viewport="mobile"] .cloud--near,
+html[data-intro-mode="tabletLite"] .cloud--far,
+html[data-intro-mode="tabletLite"] .cloud--near,
+html[data-intro-mode="lite"] .cloud--mid,
+html[data-intro-mode="lite"] .cloud--near {
+  display: none;
+}
+
+/* High-pixel portrait tablets: one-plate fallback */
 @media (min-width: 801px) and (max-width: 900px) and (min-height: 1100px) {
   .cloud--far,
   .cloud--near,
-  .cloud--foreground,
-  .hero-mist--coast,
-  .hero-mist--foreground {
+  .hero-mist--coast {
     display: none;
   }
 }
@@ -324,23 +319,7 @@ html[data-intro-mode="lite"] {
   --cloud-far-image: url("assets/atmosphere/cloud-far-mobile.webp");
 }
 
-html[data-viewport="tabletLandscape"] .cloud--near,
-html[data-viewport="tabletLandscape"] .cloud--foreground,
-html[data-viewport="tabletPortrait"] .cloud--near,
-html[data-viewport="tabletPortrait"] .cloud--foreground,
-html[data-viewport="mobile"] .cloud--near,
-html[data-viewport="mobile"] .cloud--foreground,
-html[data-intro-mode="tabletLite"] .cloud--far,
-html[data-intro-mode="tabletLite"] .cloud--near,
-html[data-intro-mode="tabletLite"] .cloud--foreground,
-html[data-intro-mode="lite"] .cloud--mid,
-html[data-intro-mode="lite"] .cloud--near,
-html[data-intro-mode="lite"] .cloud--foreground {
-  display: none;
-}
-
-/* The whiteout the sequence begins inside. Its colour is sampled from the
-   render's own upper sky at load time. */
+/* The whiteout the sequence begins inside */
 .haze {
   position: fixed;
   inset: 0;
@@ -385,8 +364,7 @@ html[data-intro-mode="lite"] .cloud--foreground {
 }
 
 .cinema-layer,
-.scene-stack,
-.transition-flare {
+.scene-stack {
   position: absolute;
   inset: 0;
 }
@@ -430,8 +408,7 @@ html[data-intro-mode="lite"] .cloud--foreground {
   visibility: hidden;
 }
 
-/* Every scene field is edge-to-edge. Wide and portrait renders retain their
-   proportion over a soft image-derived field; no viewport frame is added. */
+/* Edge-to-edge field derived from the scene's own image — no viewport frame */
 .cinema-layer:is(
   [data-presentation="standard-landscape"],
   [data-presentation="wide-cinematic"],
@@ -473,10 +450,6 @@ html[data-intro-mode="lite"] .cloud--foreground {
 .cinema-layer[data-presentation="portrait"]::before {
   opacity: 0.76;
   filter: blur(16px) saturate(0.66) contrast(0.88);
-}
-
-.cinema-layer[data-presentation="portrait"]::after {
-  background: transparent;
 }
 
 .scene-life {
@@ -548,6 +521,7 @@ html[data-intro-mode="lite"] .cloud--foreground {
   isolation: isolate;
 }
 
+/* Local feathered gradient behind caption — not a rectangle */
 .scene-caption::before {
   content: "";
   position: absolute;
@@ -637,14 +611,6 @@ html[data-intro-mode="lite"] .cloud--foreground {
   color: rgba(255, 250, 242, 0.92);
 }
 
-.transition-flare {
-  z-index: 38;
-  opacity: 0;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  background: radial-gradient(circle at 12% 28%, rgba(247, 239, 226, 0.72), rgba(247, 239, 226, 0) 58%);
-}
-
 .hero-reveal {
   position: absolute;
   inset: 0;
@@ -658,7 +624,6 @@ html[data-intro-mode="lite"] .cloud--foreground {
   transform: translate3d(0, var(--hero-shift-y), 0) scale(var(--hero-scale));
 }
 
-/* An <img> with no src yet must never flash its alt text. */
 .hero-media__img:not([src]),
 .sky-drift:not([src]) {
   visibility: hidden;
@@ -671,8 +636,7 @@ html[data-intro-mode="lite"] .cloud--foreground {
   object-position: var(--hero-object-position);
 }
 
-/* Fallback sky used only if the render cannot be loaded. It never pretends to
-   be the architecture — it is a plain dawn field so the page stays coherent. */
+/* Fallback sky — no render */
 .hero-fallback {
   position: absolute;
   inset: 0;
@@ -686,48 +650,7 @@ body[data-hero="missing"] .hero-fallback {
   display: block;
 }
 
-.hero-missing {
-  /* Only ever sits over the light fallback sky, so it is set in ink. */
-  position: absolute;
-  left: var(--edge);
-  top: clamp(6rem, 22%, 14rem);
-  z-index: 6;
-  display: none;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.9rem;
-  max-width: 34ch;
-  color: var(--ink);
-}
-
-.hero-missing .u-label {
-  color: rgba(8, 9, 11, 0.66);
-}
-
-body[data-hero="missing"][data-state="ready"] .hero-missing {
-  display: flex;
-}
-
-.hero-missing__pick {
-  padding: 0.6rem 1.2rem;
-  border: 1px solid rgba(8, 9, 11, 0.3);
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color 0.4s var(--ease-cine), background-color 0.4s var(--ease-cine);
-}
-
-.hero-missing__pick:hover,
-.hero-missing__pick:focus-within {
-  border-color: var(--ink);
-  background: rgba(8, 9, 11, 0.06);
-}
-
-/* --- atmosphere ----------------------------------------------------------
-   No procedural clouds. The moving sky IS the render's own sky: a second copy
-   of the same image, masked to the band above the architecture, drifting a
-   fraction of a percent against the original. Its lighting, colour, horizon
-   and grain match by definition, and the building never moves.
-   -------------------------------------------------------------------------- */
+/* --- atmosphere ---------------------------------------------------------- */
 
 .sky-drift {
   position: absolute;
@@ -740,8 +663,6 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   pointer-events: none;
   will-change: transform;
   transform: scale(1.035);
-  /* Two masks: a horizontal band above the architecture, and a fade that stops
-     before the city skyline on the right so no building is ever doubled. */
   mask-image:
     linear-gradient(180deg, #000 0%, #000 var(--sky-mask-end, 8%), rgba(0, 0, 0, 0) var(--sky-mask-fade, 20%)),
     linear-gradient(90deg, #000 0%, #000 46%, rgba(0, 0, 0, 0) 66%);
@@ -752,8 +673,7 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   -webkit-mask-composite: source-in;
 }
 
-/* Three mist-rich zones keep the existing atmosphere alive without duplicating
-   the tower, road or shoreline geometry from the hero render. */
+/* Two mist zones on desktop; tablet/mobile use one or none */
 .hero-mist {
   position: absolute;
   inset: 0;
@@ -779,38 +699,32 @@ body[data-hero="missing"][data-state="ready"] .hero-missing {
   -webkit-mask-image: radial-gradient(ellipse 38% 16% at 77% 30%, #000 8%, rgba(0, 0, 0, 0) 70%);
 }
 
-.hero-mist--foreground {
-  background-position: 44% 100%;
-  mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
-  -webkit-mask-image: radial-gradient(ellipse 68% 18% at 46% 91%, #000 7%, rgba(0, 0, 0, 0) 74%);
-}
-
+/* Tablet: normal blend, no coast mist */
 html[data-viewport="tabletLandscape"] .hero-mist,
 html[data-viewport="tabletPortrait"] .hero-mist {
   mix-blend-mode: normal;
 }
 
+html[data-viewport="tabletLandscape"] .hero-mist--coast,
+html[data-viewport="tabletPortrait"] .hero-mist--coast {
+  display: none;
+}
+
+/* Mobile: one mist only, normal blend */
 html[data-viewport="mobile"] .hero-mist {
   mix-blend-mode: normal;
 }
 
-html[data-viewport="tabletLandscape"] .hero-mist--foreground,
-html[data-viewport="tabletPortrait"] .hero-mist--foreground,
-html[data-viewport="mobile"] .hero-mist--coast,
-html[data-viewport="mobile"] .hero-mist--foreground,
-html[data-intro-mode="tabletLite"] .hero-mist--coast,
-html[data-intro-mode="tabletLite"] .hero-mist--foreground,
-html[data-intro-mode="lite"] .hero-mist--coast,
-html[data-intro-mode="lite"] .hero-mist--foreground,
-html[data-viewport="tabletLandscape"] .sky-breath,
-html[data-viewport="tabletPortrait"] .sky-breath,
-html[data-viewport="mobile"] .sky-breath,
-html[data-intro-mode="lite"] .sky-breath {
+html[data-viewport="mobile"] .hero-mist--coast {
   display: none;
 }
 
-/* A single, extremely slow luminance breath over the sky. No hue movement,
-   no shapes. */
+html[data-intro-mode="tabletLite"] .hero-mist--coast,
+html[data-intro-mode="lite"] .hero-mist--coast {
+  display: none;
+}
+
+/* Sky breath — desktop only, very low cost */
 .sky-breath {
   position: absolute;
   inset: 0;
@@ -822,27 +736,11 @@ html[data-intro-mode="lite"] .sky-breath {
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 24%, rgba(0, 0, 0, 0) 46%);
 }
 
-/* --- bird -----------------------------------------------------------------
-   Empty by default. Populated at runtime with a transparent WebM or a frame
-   sequence; removed entirely if neither is present.
-   -------------------------------------------------------------------------- */
-
-.bird {
-  position: absolute;
-  z-index: 42;
-  top: 0;
-  left: 0;
-  width: clamp(150px, 16vw, 260px);
-  opacity: 0;
-  pointer-events: none;
-  will-change: transform, filter, opacity;
-  filter: drop-shadow(0 4px 8px rgba(8, 9, 11, 0.12));
-}
-
-.bird__media {
-  display: block;
-  width: 100%;
-  height: auto;
+html[data-viewport="tabletLandscape"] .sky-breath,
+html[data-viewport="tabletPortrait"] .sky-breath,
+html[data-viewport="mobile"] .sky-breath,
+html[data-intro-mode="lite"] .sky-breath {
+  display: none;
 }
 
 /* --- cinematic edges ----------------------------------------------------- */
@@ -860,11 +758,11 @@ html[data-intro-mode="lite"] .sky-breath {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.6)) 0%,
-    rgba(8, 9, 11, 0) 24%,
-    rgba(8, 9, 11, 0) 40%,
-    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.5)) 68%,
-    rgba(8, 9, 11, calc(var(--scrim-strength) * 1.5)) 100%
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.5)) 0%,
+    rgba(8, 9, 11, 0) 22%,
+    rgba(8, 9, 11, 0) 42%,
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 0.45)) 68%,
+    rgba(8, 9, 11, calc(var(--scrim-strength) * 1.4)) 100%
   );
 }
 
@@ -872,7 +770,7 @@ html[data-intro-mode="lite"] .sky-breath {
   content: "";
   position: absolute;
   inset: 0;
-  box-shadow: inset 0 0 clamp(90px, 16vw, 240px) rgba(8, 9, 11, var(--vignette-strength));
+  box-shadow: inset 0 0 clamp(90px, 16vw, 220px) rgba(8, 9, 11, var(--vignette-strength));
 }
 
 /* --------------------------------------------------------------------------
@@ -898,6 +796,7 @@ html[data-intro-mode="lite"] .sky-breath {
   background: var(--hairline);
   transform: scaleX(0);
   transform-origin: 0 50%;
+  display: block;
 }
 
 .hero-type__place {
@@ -955,8 +854,7 @@ html[data-intro-mode="lite"] .sky-breath {
 .hud__wordmark,
 .hud__menu,
 .hud__cue,
-.hud__progress,
-.hud__sound {
+.hud__progress {
   pointer-events: auto;
 }
 
@@ -998,7 +896,7 @@ html[data-intro-mode="lite"] .sky-breath {
   transform: translateX(-4px);
 }
 
-/* Scroll cue — a hairline that draws downward, not a button. */
+/* Navigation cue */
 .hud__cue {
   position: absolute;
   right: var(--edge);
@@ -1010,6 +908,11 @@ html[data-intro-mode="lite"] .sky-breath {
   opacity: 0;
   color: rgba(239, 233, 223, 0.75);
   background: none;
+  transition: opacity 0.4s ease;
+}
+
+.hud__cue.is-dismissed {
+  pointer-events: none;
 }
 
 .hud__cue-line {
@@ -1037,7 +940,7 @@ html[data-intro-mode="lite"] .sky-breath {
   100% { transform: translateY(300%); opacity: 0; }
 }
 
-/* Scene progress — reads as a measured architectural scale, not a scrollbar. */
+/* Scene progress */
 .hud__progress {
   position: absolute;
   top: var(--safe-top);
@@ -1072,6 +975,7 @@ html[data-intro-mode="lite"] .sky-breath {
   text-shadow: 0 1px 14px rgba(5, 6, 8, 0.74);
 }
 
+/* Signature — discreet, two items only */
 .signature {
   position: fixed;
   z-index: 56;
@@ -1079,19 +983,14 @@ html[data-intro-mode="lite"] .sky-breath {
   bottom: max(clamp(1.15rem, 2.6vh, 2rem), env(safe-area-inset-bottom));
   display: flex;
   align-items: baseline;
-  gap: clamp(1.1rem, 3vw, 3rem);
+  gap: clamp(1.4rem, 3vw, 3rem);
   transform: translateX(-50%);
-  color: rgba(198, 188, 174, 0.66);
+  color: rgba(198, 188, 174, 0.52);
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-}
-
-.signature strong {
-  font-weight: 500;
-  letter-spacing: 0.26em;
-  color: #d9b88f;
+  letter-spacing: 0.22em;
 }
 
 /* --------------------------------------------------------------------------
@@ -1109,7 +1008,6 @@ html[data-intro-mode="lite"] .sky-breath {
   background: rgba(8, 9, 11, 0.97);
   visibility: hidden;
   opacity: 0;
-  /* visibility flips instantly on open so the first link is focusable at once */
   transition: opacity 0.6s var(--ease-cine), visibility 0s linear 0.6s;
 }
 
@@ -1132,7 +1030,6 @@ html[data-intro-mode="lite"] .sky-breath {
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: menu;
 }
 
 .menu__item {
@@ -1177,8 +1074,7 @@ html[data-intro-mode="lite"] .sky-breath {
    9. Responsive
    -------------------------------------------------------------------------- */
 
-/* Tablet landscape is deliberately denser than desktop, but remains a
-   horizontal cinematic composition rather than a scaled-up phone. */
+/* Tablet landscape */
 html[data-viewport="tabletLandscape"] {
   --edge: clamp(1.6rem, 3.2vw, 2.5rem);
   --ui-tracking: 0.21em;
@@ -1230,7 +1126,7 @@ html[data-viewport="tabletLandscape"] .menu__foot {
   margin-top: clamp(1.25rem, 3svh, 2rem);
 }
 
-/* Tablet portrait has its own hierarchy and navigation rhythm. */
+/* Tablet portrait */
 html[data-viewport="tabletPortrait"] {
   --edge: clamp(1.7rem, 4.2vw, 2.35rem);
   --ui-tracking: 0.2em;
@@ -1354,19 +1250,12 @@ html[data-viewport="tabletPortrait"] .signature {
   left: var(--safe-left);
   right: var(--safe-right);
   bottom: max(1.1rem, env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: end;
-  gap: 0.2rem 1.35rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.2rem;
   transform: none;
-  font-size: 0.64rem;
-  letter-spacing: 0.17em;
-  text-align: right;
-}
-
-html[data-viewport="tabletPortrait"] .signature strong {
-  grid-column: 1 / -1;
-  letter-spacing: 0.19em;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
 }
 
 html[data-viewport="tabletPortrait"] .menu__link {
@@ -1375,8 +1264,7 @@ html[data-viewport="tabletPortrait"] .menu__link {
   font-size: clamp(2.5rem, 6.3vw, 3.2rem);
 }
 
-/* Phone, in either orientation: essential controls only, with a two-tier
-   signature and shorter, cheaper atmospheric work. */
+/* Phone */
 html[data-viewport="mobile"] {
   --edge: clamp(1.05rem, 4.8vw, 1.4rem);
   --ui-size: 0.625rem;
@@ -1387,17 +1275,6 @@ html[data-viewport="mobile"] {
 
 html[data-viewport="mobile"] .scene--hero {
   min-height: 100svh;
-}
-
-html[data-viewport="mobile"] .cloud--foreground,
-html[data-viewport="mobile"] .hero-mist--foreground {
-  display: none;
-}
-
-html[data-viewport="mobile"] .bird {
-  width: clamp(105px, 29vw, 136px);
-  filter: none;
-  will-change: transform, opacity;
 }
 
 html[data-viewport="mobile"] .hud__wordmark {
@@ -1561,20 +1438,12 @@ html[data-viewport="mobile"] .signature {
   left: var(--safe-left);
   right: var(--safe-right);
   bottom: max(0.72rem, env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: end;
-  gap: 0.08rem 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.9rem;
   transform: none;
-  font-size: 0.53rem;
-  line-height: 1.3;
+  font-size: 0.5rem;
   letter-spacing: 0.13em;
-  text-align: right;
-}
-
-html[data-viewport="mobile"] .signature strong {
-  grid-column: 1 / -1;
-  letter-spacing: 0.15em;
 }
 
 html[data-viewport="mobile"] .menu {
@@ -1592,6 +1461,7 @@ html[data-viewport="mobile"] .menu__foot {
   margin-top: clamp(1.5rem, 4svh, 2.5rem);
 }
 
+/* Landscape phone */
 @media (max-height: 560px) and (orientation: landscape) {
   html[data-viewport="mobile"] .hero-type {
     bottom: 3.4rem;
@@ -1613,7 +1483,6 @@ html[data-viewport="mobile"] .menu__foot {
     bottom: 1.5rem;
     max-width: 52%;
   }
-
 }
 
 /* --------------------------------------------------------------------------
