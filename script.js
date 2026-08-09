@@ -25,7 +25,7 @@ const experienceConfig = {
     tabletPortrait: { dprCap: 1.5,  cloudCount: 1, mistCount: 1, skyDrift: false },
     tabletLite:     { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
     mobile:         { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
-    lite:           { dprCap: 1,    cloudCount: 0, mistCount: 0, skyDrift: false }
+    lite:           { dprCap: 1,    cloudCount: 1, mistCount: 1, skyDrift: false }
   },
 
   /* Hero render */
@@ -526,7 +526,7 @@ const Loader = {
     if (hero) hero.src = src;
     this.heroSrc = src;
     body.dataset.hero = "";
-    if (Env.introMode === "desktop") Atmosphere.deriveFromRender(src);
+    Atmosphere.deriveFromRender(src);
   },
 
   async run() {
@@ -571,9 +571,6 @@ const Loader = {
 const AmbientSound = {
   el:          $("#ambient-audio"),
   button:      $("#hero-sound"),
-  context:     null,
-  source:      null,
-  gain:        null,
   enabled:     false,
   bound:       false,
   starting:    false,
@@ -587,22 +584,21 @@ const AmbientSound = {
   _firstPointer: null,
   _firstTouch: null,
   _firstClick: null,
+  _firstWheel: null,
   _firstKey: null,
 
   init() {
     if (this.bound || !this.el) return;
     this.bound = true;
     this.el.loop = true;
-    this.el.muted = true;
-    this.el.volume = 1;
+    this.el.muted = false;
+    this.el.volume = this.targetGain();
     this.timelineStartedAt = performance.now();
-    body.dataset.audio = "muted";
+    body.dataset.audio = "starting";
     this.updateButton();
-    this.ensurePlaying();
 
     this.button?.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.consumeUnlock();
       if (this.enabled) this.disable();
       else this.enable();
     });
@@ -610,56 +606,34 @@ const AmbientSound = {
     const firstInteraction = (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest("#hero-sound")) return;
-      if (!this.consumeUnlock()) return;
+      if (this.unlockConsumed || this.enabled || this.starting) return;
       this.enable();
     };
     this._firstPointer = firstInteraction;
     this._firstTouch = firstInteraction;
     this._firstClick = firstInteraction;
+    this._firstWheel = firstInteraction;
     this._firstKey = firstInteraction;
     document.addEventListener("pointerdown", this._firstPointer, { capture: true, passive: true });
     document.addEventListener("touchstart", this._firstTouch, { capture: true, passive: true });
     document.addEventListener("click", this._firstClick, { capture: true, passive: true });
+    document.addEventListener("wheel", this._firstWheel, { capture: true, passive: true });
     document.addEventListener("keydown", this._firstKey, { capture: true });
     this.el.addEventListener("ended", () => this.ensurePlaying());
-  },
-
-  consumeUnlock() {
-    if (this.unlockConsumed) return false;
-    this.unlockConsumed = true;
-    this.removeUnlockListeners();
-    return true;
+    this.enable({ autoplay: true });
   },
 
   removeUnlockListeners() {
     if (this._firstPointer) document.removeEventListener("pointerdown", this._firstPointer, true);
     if (this._firstTouch) document.removeEventListener("touchstart", this._firstTouch, true);
     if (this._firstClick) document.removeEventListener("click", this._firstClick, true);
+    if (this._firstWheel) document.removeEventListener("wheel", this._firstWheel, true);
     if (this._firstKey) document.removeEventListener("keydown", this._firstKey, true);
     this._firstPointer = null;
     this._firstTouch = null;
     this._firstClick = null;
+    this._firstWheel = null;
     this._firstKey = null;
-  },
-
-  createGraph() {
-    if (this.gain) return true;
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return false;
-    try {
-      this.context = new AudioContextClass();
-      this.source = this.context.createMediaElementSource(this.el);
-      this.gain = this.context.createGain();
-      this.gain.gain.value = 0;
-      this.source.connect(this.gain);
-      this.gain.connect(this.context.destination);
-      return true;
-    } catch (error) {
-      this.context = null;
-      this.source = null;
-      this.gain = null;
-      return false;
-    }
   },
 
   ensurePlaying() {
@@ -697,21 +671,17 @@ const AmbientSound = {
     return Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
   },
 
-  async enable() {
+  async enable({ autoplay = false } = {}) {
     if (!this.el || this.enabled || this.starting) return;
     this.starting = true;
     body.dataset.audio = "starting";
     this.updateButton();
 
-    const hasGraph = this.createGraph();
-    const resume = this.context?.state === "suspended"
-      ? this.context.resume().catch(() => {})
-      : Promise.resolve();
-    if (!hasGraph) this.el.volume = 0;
     const alignOnStart = !this.hasStartedPlayback && this.el.paused;
     this.alignInitialTimeline();
-    const played = this.ensurePlaying();
-    const [, didPlay] = await Promise.all([resume, played]);
+    this.el.muted = false;
+    if (autoplay) this.el.volume = this.targetGain();
+    const didPlay = await this.ensurePlaying();
     if (didPlay === false || this.el.paused) {
       this.enabled = false;
       this.starting = false;
@@ -726,9 +696,12 @@ const AmbientSound = {
 
     this.enabled = true;
     this.starting = false;
+    this.unlockConsumed = true;
+    this.removeUnlockListeners();
     body.dataset.audio = "on";
-    this.el.muted = false;
-    this.fadeTo(this.targetGain(), 1.8);
+    if (!autoplay || this.el.volume < this.targetGain() * 0.8) {
+      this.fadeTo(this.targetGain(), 1.35);
+    }
     this.updateButton();
   },
 
@@ -752,14 +725,6 @@ const AmbientSound = {
 
   fadeTo(value, seconds = 1.1) {
     if (!this.el) return;
-    if (this.gain && this.context) {
-      const now = this.context.currentTime;
-      const param = this.gain.gain;
-      param.cancelScheduledValues(now);
-      param.setValueAtTime(param.value, now);
-      param.linearRampToValueAtTime(value, now + seconds);
-      return;
-    }
     if (window.gsap) gsap.to(this.el, { volume: value, duration: seconds, ease: "power1.inOut", overwrite: true });
     else this.el.volume = value;
   },
@@ -781,15 +746,18 @@ const AmbientSound = {
   },
 
   recoverFromBrowserInterruption() {
-    if (this.enabled && this.context?.state === "suspended") this.context.resume().catch(() => {});
-    if (this.el?.paused) this.ensurePlaying();
+    if (!this.hasStartedPlayback && !this.enabled) {
+      this.enable({ autoplay: true });
+    } else if (this.el?.paused) {
+      this.ensurePlaying();
+    }
   },
 
   updateButton() {
     if (!this.button) return;
     this.button.hidden = false;
     this.button.setAttribute("aria-pressed", String(this.enabled));
-    this.button.setAttribute("aria-label", this.enabled ? "Mute ambient sound" : "Enable ambient sound");
+    this.button.setAttribute("aria-label", this.enabled ? "Mute ambient sound" : "Unmute ambient sound");
     const label = $("span:last-child", this.button);
     if (label) label.textContent = this.enabled ? "Sound on" : "Sound";
   }
