@@ -15,7 +15,7 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
 test("updated cinematic assets use one stable cache version", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   for (const asset of ["styles.css", "script.js", "benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
-    expect(html).toContain(`${asset}?v=20260809-cinematic6`);
+    expect(html).toContain(`${asset}?v=20260809-cinematic7`);
   }
 });
 
@@ -140,7 +140,7 @@ async function captureArrival(page, viewport, name) {
     });
   };
 
-  for (const at of [0, 2.5, 5, 7, 8.5, 9.5, 10.4]) {
+  for (const at of [0, 0.65, 1.25, 1.55, 1.9, 2.05, 2.35]) {
     if (at > 0) {
       await page.waitForFunction(
         (target) => document.body.dataset.state === "ready" || Intro.tl.time() >= target,
@@ -198,12 +198,12 @@ function expectCompletedArrival(result) {
   const ambient = result.readings.find((reading) => reading.t === "ambient");
   expect(ready.state).toBe("ready");
   expect(ready.hud).toBeGreaterThan(0.95);
-  expect(ready.intro.elapsed).toBeGreaterThan(10000);
-  expect(ready.intro.elapsed).toBeLessThan(11500);
+  expect(ready.intro.elapsed).toBeGreaterThan(2350);
+  expect(ready.intro.elapsed).toBeLessThan(2900);
   expect(ambient.filmState).toBe("ended");
   expect(ambient.mist.some((value) => value > 0.04)).toBeTruthy();
-  expect(result.readings[0].intro.duration).toBeGreaterThan(10);
-  expect(result.readings[0].intro.duration).toBeLessThan(11);
+  expect(result.readings[0].intro.duration).toBeGreaterThan(2.35);
+  expect(result.readings[0].intro.duration).toBeLessThan(2.7);
   expect(result.readings[0].audio.loop).toBeTruthy();
   expect(result.readings[0].audio.instances).toBe(1);
   expect(result.readings[0].audio.source).toContain("assets/audio/benghazi-ambient.mp3");
@@ -235,10 +235,10 @@ for (const [name, viewport] of [
     expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.06);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
     expect(result.readings[1].audio.muted).toBeFalsy();
-    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 2);
-    expect(result.readings[4].video.currentTime).toBeGreaterThan(0.2);
-    expect(result.readings[4].hud).toBeLessThan(0.1);
-    expect(result.readings[6].clouds.every((value) => value < 0.1)).toBeTruthy();
+    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 0.35);
+    expect(result.readings[3].video.currentTime).toBeGreaterThan(0.1);
+    expect(result.readings[1].hud).toBeLessThan(0.1);
+    expect(result.readings[5].clouds.every((value) => value < 0.1)).toBeTruthy();
     expectSeamlessMedia(result);
     expectCompletedArrival(result);
     if (name === "desktop-1366x768") {
@@ -274,7 +274,7 @@ test("retina-like desktop keeps the atmosphere procedural through the film hando
   expect(firstFrame.layers).toHaveLength(3);
   expect(firstFrame.layers.every((layer) => !layer.image.includes("url(") && layer.filter === "none")).toBeTruthy();
   expect(Math.max(...firstFrame.layers.map((layer) => layer.scale))).toBeLessThanOrEqual(1.03);
-  await page.waitForFunction(() => Intro.tl.time() >= 8.2, null, { timeout: 15000 });
+  await page.waitForFunction(() => Intro.tl.time() >= 1.5, null, { timeout: 10000 });
   const handoff = await page.evaluate(() => {
     const video = document.querySelector("#hero-video");
     return { readyState: video.readyState, currentTime: video.currentTime, opacity: Number(getComputedStyle(video).opacity) };
@@ -292,16 +292,16 @@ test("master arrival stays active for the full cinematic journey", async ({ page
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
 
   const timelineDuration = await page.evaluate(() => Intro.tl.duration());
-  expect(timelineDuration).toBeGreaterThan(10);
-  expect(timelineDuration).toBeLessThan(11);
+  expect(timelineDuration).toBeGreaterThan(2.35);
+  expect(timelineDuration).toBeLessThan(2.7);
 
   await page.mouse.wheel(0, 900);
   await page.keyboard.press("ArrowDown");
-  await page.waitForTimeout(3200);
+  await page.waitForTimeout(850);
   const afterInput = await page.evaluate(() => ({ state: document.body.dataset.state, active: Intro.tl.isActive(), time: Intro.tl.time() }));
   expect(afterInput.state).toBe("intro");
   expect(afterInput.active).toBeTruthy();
-  expect(afterInput.time).toBeLessThan(6);
+  expect(afterInput.time).toBeLessThan(1.8);
 
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 45000 });
   const elapsed = await page.evaluate(() => {
@@ -309,8 +309,8 @@ test("master arrival stays active for the full cinematic journey", async ({ page
     const end = performance.getEntriesByName("benghazi-interactive").at(-1)?.startTime;
     return end - start;
   });
-  expect(elapsed).toBeGreaterThan(10000);
-  expect(elapsed).toBeLessThan(11500);
+  expect(elapsed).toBeGreaterThan(2350);
+  expect(elapsed).toBeLessThan(2900);
 });
 
 test("reduced motion preserves the full journey with restrained movement", async ({ page }) => {
@@ -320,8 +320,8 @@ test("reduced motion preserves the full journey with restrained movement", async
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
   const duration = await page.evaluate(() => Intro.tl.duration());
-  expect(duration).toBeGreaterThan(10);
-  expect(duration).toBeLessThan(11);
+  expect(duration).toBeGreaterThan(2.1);
+  expect(duration).toBeLessThan(2.7);
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 22000 });
   await expect(page.locator("#hero-image")).toBeVisible();
   await expect(page.locator(".hud")).toBeVisible();
@@ -381,13 +381,13 @@ test("blocked autoplay unlocks on the first normal touch anywhere", async ({ bro
   });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.audio === "blocked", null, { timeout: 5000 });
-  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 2, null, { timeout: 12000 });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 1.25, null, { timeout: 12000 });
   const before = await page.evaluate(() => ({
     timeline: AmbientSound.timelineTime(),
     attempts: window.__blockedAudioAttempts.length,
     pressed: document.querySelector("#hero-sound").getAttribute("aria-pressed")
   }));
-  expect(before.timeline).toBeGreaterThan(2);
+  expect(before.timeline).toBeGreaterThan(1.2);
   expect(before.attempts).toBe(1);
   expect(before.pressed).toBe("false");
 
@@ -435,7 +435,7 @@ test("first touch supersedes an autoplay request that is still pending", async (
   });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(
-    () => document.body.dataset.audio === "starting" && document.body.dataset.state === "intro" && Intro.tl?.time() > 2,
+    () => document.body.dataset.audio === "starting" && document.body.dataset.state === "intro" && Intro.tl?.time() > 1.25,
     null,
     { timeout: 12000 }
   );
@@ -449,7 +449,7 @@ test("first touch supersedes an autoplay request that is still pending", async (
   }));
   expect(result.attempts).toBe(2);
   expect(result.instances).toBe(1);
-  expect(result.time).toBeGreaterThan(1.8);
+  expect(result.time).toBeGreaterThan(1.05);
   expect(result.pressed).toBe("true");
   await context.close();
 });
@@ -545,7 +545,7 @@ test("tablet rotation preserves the live intro, film and soundtrack timelines", 
   page.on("console", (message) => message.type() === "error" && errors.push(`console: ${message.text()}`));
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 4, null, { timeout: 14000 });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 0.7, null, { timeout: 14000 });
   await ensureSoundOn(page);
   const portrait = await page.evaluate(() => {
     window.__rotationAudio = document.querySelector("#ambient-audio");
@@ -592,7 +592,7 @@ test("tablet rotation preserves the live intro, film and soundtrack timelines", 
   });
   expect(returnedPortrait.sameAudio).toBeTruthy();
   expect(returnedPortrait.sameVideo).toBeTruthy();
-  expect(returnedPortrait.intro).toBeGreaterThan(beforeSecondRotation.intro + 0.4);
+  expect(returnedPortrait.intro).toBeGreaterThanOrEqual(beforeSecondRotation.intro);
   expect(returnedPortrait.audio).toBeGreaterThan(beforeSecondRotation.audio + 0.4);
   expect(returnedPortrait.video).toBeGreaterThan(beforeSecondRotation.video + 0.4);
   expect(returnedPortrait.videoReady).toBeGreaterThanOrEqual(2);
@@ -683,4 +683,241 @@ test("ambient loop boundary keeps the same live audio instance", async ({ page }
   expect(looped.time).toBeGreaterThan(0.5);
   expect(looped.time).toBeLessThan(6);
   expect(looped.state).toBe("on");
+});
+
+async function enterInteractive(page, viewport = { width: 1440, height: 900 }) {
+  await page.setViewportSize(viewport);
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.body.dataset.state === "intro", null, { timeout: 12000 });
+  await page.waitForFunction(() => Intro.tl?.isActive(), null, { timeout: 3000 });
+  await page.evaluate(() => Intro.skip());
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 6000 });
+}
+
+async function dragMain(page, fromX, toX, y = 430) {
+  await page.mouse.move(fromX, y);
+  await page.mouse.down();
+  await page.mouse.move(toX, y, { steps: 8 });
+  await page.mouse.up();
+}
+
+test("proposal configuration preserves every curated title, order and production asset", async () => {
+  const expected02 = [
+    "proposal-02-main", "benghazi-waterfront", "the-landmark", "architecture-as-landscape",
+    "active-podium", "sculpted-ground-02", "coastal-arrival", "at-the-waters-edge",
+    "work-above-the-city", "living-in-the-sky", "above-benghazi", "elevated-garden"
+  ];
+  const expected03 = [
+    "proposal-03-main", "twin-horizon", "between-sky-and-sea", "central-frame",
+    "ribbons-in-motion", "framed-terraces", "work-between-horizons", "sky-residence",
+    "private-living", "dining-above-the-sea", "water-moves-inward", "land-meets-water",
+    "lagoon-walk", "life-at-waters-edge", "sunset-pavilion", "new-waterfront"
+  ];
+  const script = fs.readFileSync(path.join(__dirname, "script.js"), "utf8");
+  for (const id of [...expected02, ...expected03]) expect(script).toContain(`id: "${id}"`);
+  for (const folder of ["02", "03"]) {
+    const directory = path.join(__dirname, "assets", "proposals", folder);
+    for (const file of fs.readdirSync(directory)) {
+      expect(file.endsWith(".webp")).toBeTruthy();
+      expect(fs.statSync(path.join(directory, file)).size).toBeGreaterThan(60_000);
+    }
+  }
+  expect(fs.readdirSync(path.join(__dirname, "assets", "proposals", "02"))).toHaveLength(12);
+  expect(fs.readdirSync(path.join(__dirname, "assets", "proposals", "03"))).toHaveLength(16);
+});
+
+test("desktop MAIN drag switches 01 ↔ 02 ↔ 03 without wrapping or replaying the opening", async ({ page }) => {
+  test.setTimeout(40000);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await enterInteractive(page);
+  const initial = await page.evaluate(() => {
+    window.__proposalAudio = document.querySelector("#ambient-audio");
+    return { proposal: document.body.dataset.proposal, intro: Intro.tl.time(), film: document.body.dataset.film };
+  });
+  expect(initial.proposal).toBe("01");
+
+  await dragMain(page, 980, 670);
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+  await expect(page.locator("#hud-progress-label")).toContainText("02 / 03 — DESIGN PROPOSAL 02");
+  await expect(page.locator(".hero-type__subtitle")).toContainText("sculptural landmark");
+  expect(await page.locator('#scene-stack > .cinema-layer[data-proposal="02"]').count()).toBe(12);
+  expect(await page.locator('#scene-stack > .cinema-layer[data-proposal="03"]').count()).toBe(0);
+  fs.mkdirSync(auditDir, { recursive: true });
+  await page.screenshot({ path: path.join(auditDir, "proposal-02-main-desktop.jpg"), type: "jpeg", quality: 88 });
+
+  await dragMain(page, 980, 670);
+  await page.waitForFunction(() => document.body.dataset.proposal === "03", null, { timeout: 6000 });
+  await expect(page.locator("#hud-progress-label")).toContainText("03 / 03 — DESIGN PROPOSAL 03");
+  expect(await page.locator('#scene-stack > .cinema-layer[data-proposal="03"]').count()).toBe(16);
+  expect(await page.locator('#scene-stack > .cinema-layer[data-proposal="02"]').count()).toBe(0);
+  await page.screenshot({ path: path.join(auditDir, "proposal-03-main-desktop.jpg"), type: "jpeg", quality: 88 });
+
+  await dragMain(page, 980, 670);
+  await page.waitForTimeout(600);
+  expect(await page.evaluate(() => document.body.dataset.proposal)).toBe("03");
+
+  await dragMain(page, 650, 980);
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+  await dragMain(page, 650, 980);
+  await page.waitForFunction(() => document.body.dataset.proposal === "01", null, { timeout: 6000 });
+  const returned = await page.evaluate(() => ({
+    sameAudio: window.__proposalAudio === document.querySelector("#ambient-audio"),
+    audioCount: document.querySelectorAll("audio").length,
+    intro: Intro.tl.time(),
+    state: document.body.dataset.state
+  }));
+  expect(returned.sameAudio).toBeTruthy();
+  expect(returned.audioCount).toBe(1);
+  expect(returned.intro).toBe(initial.intro);
+  expect(returned.state).toBe("ready");
+  expect(errors).toEqual([]);
+});
+
+test("vertical journeys are proposal-local and horizontal switching is disabled away from MAIN", async ({ page }) => {
+  test.setTimeout(60000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await enterInteractive(page);
+  await page.evaluate(() => ProposalNavigation.go(1));
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+
+  const expected02 = [
+    "benghazi-waterfront", "the-landmark", "architecture-as-landscape", "active-podium",
+    "sculpted-ground-02", "coastal-arrival", "at-the-waters-edge", "work-above-the-city",
+    "living-in-the-sky", "above-benghazi", "elevated-garden"
+  ];
+  for (let index = 1; index <= expected02.length; index += 1) {
+    await page.evaluate((target) => SceneNavigation.goToScene(target), index);
+    await page.waitForFunction((target) => SceneNavigation.currentScene === target, index, { timeout: 5000 });
+    expect(await page.evaluate(() => experienceConfig.scenes[SceneNavigation.currentScene].id)).toBe(expected02[index - 1]);
+    expect(await page.evaluate(() => ProposalNavigation.go(1))).toBeFalsy();
+    expect(await page.evaluate(() => document.body.dataset.proposal)).toBe("02");
+  }
+  await page.evaluate(() => SceneNavigation.goToScene(0));
+  await page.waitForFunction(() => SceneNavigation.currentScene === 0, null, { timeout: 5000 });
+  await page.evaluate(() => ProposalNavigation.go(1));
+  await page.waitForFunction(() => document.body.dataset.proposal === "03", null, { timeout: 6000 });
+
+  const expected03 = [
+    "twin-horizon", "between-sky-and-sea", "central-frame", "ribbons-in-motion", "framed-terraces",
+    "work-between-horizons", "sky-residence", "private-living", "dining-above-the-sea",
+    "water-moves-inward", "land-meets-water", "lagoon-walk", "life-at-waters-edge",
+    "sunset-pavilion", "new-waterfront"
+  ];
+  for (let index = 1; index <= expected03.length; index += 1) {
+    await page.evaluate((target) => SceneNavigation.goToScene(target), index);
+    await page.waitForFunction((target) => SceneNavigation.currentScene === target, index, { timeout: 5000 });
+    expect(await page.evaluate(() => experienceConfig.scenes[SceneNavigation.currentScene].id)).toBe(expected03[index - 1]);
+  }
+  expect(await page.evaluate(() => document.body.dataset.finalScene)).toBe("true");
+  expect(await page.evaluate(() => Number(getComputedStyle(document.querySelector(".hud__progress")).opacity))).toBeLessThan(0.4);
+});
+
+test("trackpad axes stay separate: vertical explores and intentional horizontal changes proposal only at MAIN", async ({ page }) => {
+  await enterInteractive(page);
+  await page.mouse.wheel(0, 120);
+  await page.waitForFunction(() => SceneNavigation.currentScene === 1, null, { timeout: 5000 });
+  expect(await page.evaluate(() => document.body.dataset.proposal)).toBe("01");
+  await page.mouse.wheel(140, 3);
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => document.body.dataset.proposal)).toBe("01");
+  await page.evaluate(() => SceneNavigation.goToScene(0));
+  await page.waitForFunction(() => SceneNavigation.currentScene === 0, null, { timeout: 5000 });
+  await page.mouse.wheel(140, 3);
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+});
+
+test("mobile dominant-axis swipes choose proposals only at MAIN and keep vertical exploration intact", async ({ browser }) => {
+  test.setTimeout(35000);
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 2
+  });
+  const page = await context.newPage();
+  const session = await context.newCDPSession(page);
+  const swipe = async (from, to) => {
+    const point = (value) => ({ x: value.x, y: value.y, radiusX: 2, radiusY: 2, force: 1, id: 1 });
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point(from)] });
+    for (let step = 1; step <= 6; step += 1) {
+      const ratio = step / 6;
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [point({ x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio })]
+      });
+    }
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+
+  await enterInteractive(page, { width: 390, height: 844 });
+  await swipe({ x: 330, y: 430 }, { x: 65, y: 430 });
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+  fs.mkdirSync(auditDir, { recursive: true });
+  await page.screenshot({ path: path.join(auditDir, "proposal-02-main-mobile.jpg"), type: "jpeg", quality: 88 });
+
+  await swipe({ x: 195, y: 700 }, { x: 195, y: 210 });
+  await page.waitForFunction(() => SceneNavigation.currentScene === 1, null, { timeout: 6000 });
+  await page.screenshot({ path: path.join(auditDir, "proposal-02-scene-01-mobile.jpg"), type: "jpeg", quality: 88 });
+  await swipe({ x: 330, y: 430 }, { x: 65, y: 430 });
+  await page.waitForTimeout(700);
+  expect(await page.evaluate(() => document.body.dataset.proposal)).toBe("02");
+  expect(await page.evaluate(() => SceneNavigation.currentScene)).toBe(1);
+
+  await swipe({ x: 195, y: 220 }, { x: 195, y: 710 });
+  await page.waitForFunction(() => SceneNavigation.currentScene === 0, null, { timeout: 6000 });
+  await swipe({ x: 330, y: 430 }, { x: 65, y: 430 });
+  await page.waitForFunction(() => document.body.dataset.proposal === "03", null, { timeout: 6000 });
+  await page.screenshot({ path: path.join(auditDir, "proposal-03-main-mobile.jpg"), type: "jpeg", quality: 88 });
+  await context.close();
+});
+
+test("initial network stays lean and proposal images are progressively decoded", async ({ page }) => {
+  test.setTimeout(30000);
+  const proposalRequests = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/assets/proposals/")) proposalRequests.push(request.url());
+  });
+  await enterInteractive(page);
+  await page.waitForTimeout(1800);
+  const initiallyRequested = proposalRequests.map((url) => url.split("/assets/proposals/")[1]);
+  expect(initiallyRequested.every((asset) => asset === "02/main.webp")).toBeTruthy();
+  expect(initiallyRequested.some((asset) => asset.includes("03/"))).toBeFalsy();
+
+  await page.evaluate(() => ProposalNavigation.go(1));
+  await page.waitForFunction(() => document.body.dataset.proposal === "02", null, { timeout: 6000 });
+  await page.waitForTimeout(500);
+  const loaded = await page.evaluate(() => ({
+    indexes: [...SceneDeck.loaded].sort((a, b) => a - b),
+    sources: [...document.querySelectorAll("#scene-stack .cinema-media img[src]")].map((img) => img.getAttribute("src"))
+  }));
+  expect(loaded.indexes).toEqual([0, 1]);
+  expect(loaded.sources.some((source) => source.endsWith("02/main.webp"))).toBeTruthy();
+  expect(loaded.sources.some((source) => source.endsWith("02/benghazi-waterfront.webp"))).toBeTruthy();
+  expect(loaded.sources.every((source) => !source.includes("02/landmark.webp"))).toBeTruthy();
+});
+
+test("proposal menus use the current journey and Scenario 02 appears as a quiet chapter bridge", async ({ page }) => {
+  test.setTimeout(30000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await enterInteractive(page);
+  await page.evaluate(() => ProposalNavigation.switchTo(2, 1));
+  await page.waitForFunction(() => document.body.dataset.proposal === "03", null, { timeout: 6000 });
+  await page.locator("#menu-trigger").click();
+  const labels = await page.locator("#menu-list .menu__link").allTextContents();
+  expect(labels.map((label) => label.replace(/^\s*\d+\s*/, "").trim())).toEqual([
+    "TWIN HORIZON", "BETWEEN SKY AND SEA", "THE CENTRAL FRAME", "RIBBONS IN MOTION", "FRAMED TERRACES",
+    "WORK BETWEEN HORIZONS", "THE SKY RESIDENCE", "PRIVATE LIVING", "DINING ABOVE THE SEA",
+    "THE WATER MOVES INWARD", "LAND MEETS WATER", "THE LAGOON WALK", "LIFE AT THE WATER'S EDGE",
+    "SUNSET PAVILION", "A NEW WATERFRONT"
+  ]);
+  await expect(page.locator(".menu__chapter")).toContainText("SCENARIO 02");
+  await page.locator("#menu-close").click();
+  await page.evaluate(() => SceneNavigation.goToScene(9));
+  await page.waitForFunction(() => SceneNavigation.currentScene === 9, null, { timeout: 5000 });
+  await page.evaluate(() => SceneNavigation.goToScene(10));
+  await page.waitForFunction(() => Number(getComputedStyle(document.querySelector("#chapter-transition")).opacity) > 0.1, null, { timeout: 2500 });
+  await expect(page.locator("#chapter-kicker")).toHaveText("SCENARIO 02");
+  await expect(page.locator("#chapter-title")).toHaveText("BRINGING THE LAKE INTO THE SITE");
+  await page.waitForFunction(() => SceneNavigation.currentScene === 10, null, { timeout: 5000 });
 });

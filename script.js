@@ -798,6 +798,200 @@ const AmbientSound = {
   }
 };
 
+/* Three alternatives share one scene system. Proposal 01 remains the original
+   configuration above; the two additions are still-image journeys. */
+const proposal01Scenes = experienceConfig.scenes;
+
+const stillScene = ({
+  proposal,
+  number,
+  id,
+  title,
+  description,
+  src,
+  focus = "50% 50%",
+  tabletFocus = focus,
+  portraitFocus = focus,
+  mobileFocus = portraitFocus,
+  presentation = "standard-landscape",
+  mobilePresentation = presentation,
+  side = "left",
+  vertical = "bottom",
+  tone = "light",
+  scrim = tone === "light" ? "dark" : "light",
+  color = "#67635d",
+  chapter = null,
+  final = false,
+  main = false
+}) => ({
+  id,
+  label: title.toUpperCase(),
+  eyebrow: main ? `${String(proposal).padStart(2, "0")} / 03` : `P${String(proposal).padStart(2, "0")} — ${String(number).padStart(2, "0")}`,
+  title,
+  description,
+  src,
+  mobileSrc: src,
+  focus: {
+    desktop: focus,
+    tabletLandscape: tabletFocus,
+    tabletPortrait: portraitFocus,
+    mobile: mobileFocus
+  },
+  scale: { desktop: 1, tabletLandscape: 1, tabletPortrait: 1, mobile: 1 },
+  presentation: {
+    desktop: presentation,
+    tabletLandscape: presentation,
+    tabletPortrait: mobilePresentation,
+    mobile: mobilePresentation
+  },
+  tone: color,
+  transition: "editorial-dissolve",
+  camera: {
+    origin: focus,
+    start: [1.008, 0.16, 0],
+    read:  [1, 0, 0],
+    end:   [1.014, -0.2, 0]
+  },
+  cameraMobile: {
+    origin: mobileFocus,
+    start: [1.004, 0.08, 0],
+    read:  [1, 0, 0],
+    end:   [1.008, -0.1, 0]
+  },
+  caption: main ? false : {
+    desktop: { side, vertical, tone, scrim, maxWidth: "23rem" },
+    mobile:  { side, vertical: "bottom", tone, scrim, maxWidth: "21rem" }
+  },
+  chapter,
+  final,
+  main
+});
+
+const proposal02Scenes = [
+  stillScene({ proposal: 2, number: 0, id: "proposal-02-main", main: true,
+    title: "Design Proposal 02",
+    description: "A sculptural landmark shaped by movement, landscape and the sea.",
+    src: "assets/proposals/02/main.webp", focus: "50% 50%", portraitFocus: "50% 48%", mobileFocus: "50% 46%", color: "#8b8176" }),
+  stillScene({ proposal: 2, number: 1, id: "benghazi-waterfront", title: "Benghazi Waterfront",
+    description: "A new landmark emerges between the city and the Mediterranean.",
+    src: "assets/proposals/02/benghazi-waterfront.webp", focus: "50% 52%", portraitFocus: "50% 47%", mobileFocus: "50% 45%" }),
+  stillScene({ proposal: 2, number: 2, id: "the-landmark", title: "The Landmark",
+    description: "A single vertical gesture rises from a ground shaped by movement.",
+    src: "assets/proposals/02/landmark.webp", focus: "50% 50%", portraitFocus: "50% 48%", mobileFocus: "50% 46%", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 2, number: 3, id: "architecture-as-landscape", title: "Architecture as Landscape",
+    description: "The tower descends into terraces, gardens and a continuous public ground.",
+    src: "assets/proposals/02/architecture-landscape.webp", focus: "56% 52%", tabletFocus: "54% 52%", portraitFocus: "45% 49%", mobileFocus: "40% 48%", side: "right" }),
+  stillScene({ proposal: 2, number: 4, id: "active-podium", title: "The Active Podium",
+    description: "Layered terraces turn the base of the tower into a walkable waterfront experience.",
+    src: "assets/proposals/02/active-podium.webp", focus: "55% 50%", portraitFocus: "57% 50%", mobileFocus: "60% 50%" }),
+  stillScene({ proposal: 2, number: 5, id: "sculpted-ground-02", title: "Sculpted Ground",
+    description: "The architecture folds outward, blurring the line between building and ground.",
+    src: "assets/proposals/02/sculpted-ground.webp", focus: "52% 50%", portraitFocus: "44% 48%", mobileFocus: "39% 47%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", side: "right", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 2, number: 6, id: "coastal-arrival", title: "Coastal Arrival",
+    description: "The experience shifts to human scale — between gardens, glazing and the sea.",
+    src: "assets/proposals/02/coastal-arrival.webp", focus: "54% 50%", portraitFocus: "43% 48%", mobileFocus: "38% 47%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", side: "right", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 2, number: 7, id: "at-the-waters-edge", title: "At the Water's Edge",
+    description: "Curved terraces frame the horizon as the podium opens toward the Mediterranean.",
+    src: "assets/proposals/02/waters-edge.webp", focus: "51% 50%", portraitFocus: "42% 49%", mobileFocus: "38% 48%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", side: "right" }),
+  stillScene({ proposal: 2, number: 8, id: "work-above-the-city", title: "Work Above the City",
+    description: "Panoramic workspaces follow the curvature of the tower and open toward the coast.",
+    src: "assets/proposals/02/work-above-city.webp", focus: "54% 50%", portraitFocus: "58% 50%", mobileFocus: "60% 50%", tone: "dark", scrim: "light", vertical: "top",
+    chapter: { kicker: "INSIDE THE TOWER", line: "THE ARCHITECTURAL LANGUAGE CONTINUES WITHIN.", duration: 0.82 } }),
+  stillScene({ proposal: 2, number: 9, id: "living-in-the-sky", title: "Living in the Sky",
+    description: "A duplex residence framed by the structure, the city and the sea.",
+    src: "assets/proposals/02/living-in-sky.webp", focus: "52% 50%", portraitFocus: "55% 50%", mobileFocus: "58% 50%", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 2, number: 10, id: "above-benghazi", title: "Above Benghazi",
+    description: "Dining becomes a panoramic experience between the city and the horizon.",
+    src: "assets/proposals/02/above-benghazi.webp", focus: "58% 50%", portraitFocus: "64% 50%", mobileFocus: "67% 50%", tone: "dark", scrim: "light", side: "right" }),
+  stillScene({ proposal: 2, number: 11, id: "elevated-garden", title: "The Elevated Garden",
+    description: "The journey ends where architecture opens again to landscape, light and the sea.",
+    src: "assets/proposals/02/elevated-garden.webp", focus: "56% 50%", portraitFocus: "62% 50%", mobileFocus: "65% 50%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", final: true })
+];
+
+const proposal03Scenes = [
+  stillScene({ proposal: 3, number: 0, id: "proposal-03-main", main: true,
+    title: "Design Proposal 03",
+    description: "A twin landmark where architecture, landscape and water become one.",
+    src: "assets/proposals/03/main.webp", focus: "50% 48%", portraitFocus: "50% 47%", mobileFocus: "50% 45%", color: "#756f67" }),
+  stillScene({ proposal: 3, number: 1, id: "twin-horizon", title: "Twin Horizon",
+    description: "Two vertical forms rise together as a new mark on the Benghazi coastline.",
+    src: "assets/proposals/03/twin-horizon.webp", focus: "50% 50%", portraitFocus: "50% 47%", mobileFocus: "50% 45%" }),
+  stillScene({ proposal: 3, number: 2, id: "between-sky-and-sea", title: "Between Sky and Sea",
+    description: "Light passes through the towers, revealing the void as part of the architecture.",
+    src: "assets/proposals/03/sky-and-sea.webp", focus: "50% 50%", portraitFocus: "50% 48%", mobileFocus: "50% 46%" }),
+  stillScene({ proposal: 3, number: 3, id: "central-frame", title: "The Central Frame",
+    description: "The structure opens into monumental voids that frame the sky beyond.",
+    src: "assets/proposals/03/central-frame.webp", focus: "44% 49%", portraitFocus: "37% 48%", mobileFocus: "33% 47%", side: "right", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 4, id: "ribbons-in-motion", title: "Ribbons in Motion",
+    description: "Structure, terraces and landscape flow through a single continuous language.",
+    src: "assets/proposals/03/ribbons-motion.webp", focus: "52% 50%", portraitFocus: "56% 50%", mobileFocus: "60% 50%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 5, id: "framed-terraces", title: "Framed Terraces",
+    description: "The structural shell becomes a window into the layered life of the podium.",
+    src: "assets/proposals/03/framed-terraces.webp", focus: "57% 50%", portraitFocus: "65% 50%", mobileFocus: "68% 50%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 6, id: "work-between-horizons", title: "Work Between Horizons",
+    description: "An elevated workplace shaped by curved structure and panoramic views.",
+    src: "assets/proposals/03/work-between-horizons.webp", focus: "52% 50%", portraitFocus: "49% 50%", mobileFocus: "46% 50%", tone: "dark", scrim: "light",
+    chapter: { kicker: "WITHIN THE TOWERS", line: "THE OUTER FORM CONTINUES INTO A CURVED INTERIOR LANDSCAPE.", duration: 0.82 } }),
+  stillScene({ proposal: 3, number: 7, id: "sky-residence", title: "The Sky Residence",
+    description: "Double-height living opens toward the city through the tower's curved frame.",
+    src: "assets/proposals/03/sky-residence.webp", focus: "55% 50%", portraitFocus: "61% 50%", mobileFocus: "64% 50%", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 8, id: "private-living", title: "Private Living",
+    description: "A quieter moment above Benghazi, held between light, structure and view.",
+    src: "assets/proposals/03/private-living.webp", focus: "51% 50%", portraitFocus: "49% 50%", mobileFocus: "47% 50%", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 9, id: "dining-above-the-sea", title: "Dining Above the Sea",
+    description: "The journey through the towers culminates in a room open to the coastline.",
+    src: "assets/proposals/03/dining-above-sea.webp", focus: "57% 50%", portraitFocus: "63% 50%", mobileFocus: "66% 50%", tone: "dark", scrim: "light" }),
+  stillScene({ proposal: 3, number: 10, id: "water-moves-inward", title: "The Water Moves Inward",
+    description: "The coastline extends into the site, forming a network of lagoons, islands and paths.",
+    src: "assets/proposals/03/water-moves-inward.webp", focus: "57% 50%", portraitFocus: "66% 50%", mobileFocus: "70% 50%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic", side: "right",
+    chapter: { kicker: "SCENARIO 02", title: "BRINGING THE LAKE INTO THE SITE", line: "THE WATERFRONT MOVES INWARD, TRANSFORMING THE GROUND INTO A NEW COASTAL LANDSCAPE.", duration: 1.05 } }),
+  stillScene({ proposal: 3, number: 11, id: "land-meets-water", title: "Land Meets Water",
+    description: "The podium dissolves into gardens and walkways surrounded by water.",
+    src: "assets/proposals/03/land-meets-water.webp", focus: "54% 50%", portraitFocus: "61% 50%", mobileFocus: "64% 50%", presentation: "wide-cinematic", mobilePresentation: "wide-cinematic" }),
+  stillScene({ proposal: 3, number: 12, id: "lagoon-walk", title: "The Lagoon Walk",
+    description: "A continuous promenade weaves between landscape, pavilions and the sea.",
+    src: "assets/proposals/03/lagoon-walk.webp", focus: "53% 50%", portraitFocus: "48% 50%", mobileFocus: "44% 50%", side: "right" }),
+  stillScene({ proposal: 3, number: 13, id: "life-at-waters-edge", title: "Life at the Water's Edge",
+    description: "The waterfront becomes a place to walk, gather and stay.",
+    src: "assets/proposals/03/waters-edge-life.webp", focus: "54% 50%", portraitFocus: "48% 50%", mobileFocus: "45% 50%" }),
+  stillScene({ proposal: 3, number: 14, id: "sunset-pavilion", title: "Sunset Pavilion",
+    description: "From inside the landscape, the project opens back toward the horizon.",
+    src: "assets/proposals/03/sunset-pavilion.webp", focus: "51% 50%", portraitFocus: "50% 50%", mobileFocus: "49% 50%" }),
+  stillScene({ proposal: 3, number: 15, id: "new-waterfront", title: "A New Waterfront",
+    description: "Tower, landscape and water come together as one continuous destination.",
+    src: "assets/proposals/03/new-waterfront.webp", focus: "54% 51%", portraitFocus: "55% 49%", mobileFocus: "56% 47%", final: true })
+];
+
+const proposalConfigs = [
+  {
+    id: "01",
+    title: "Design Proposal 01",
+    statement: "The original vision",
+    place: "Benghazi, Libya",
+    mainTitle: ["Benghazi", "Tower"],
+    mainSubtitle: "A new way of living",
+    scenes: proposal01Scenes
+  },
+  {
+    id: "02",
+    title: "Design Proposal 02",
+    statement: "A sculptural landmark shaped by movement, landscape and the sea.",
+    place: "02 / 03 — Benghazi, Libya",
+    mainTitle: ["Design Proposal", "02"],
+    mainSubtitle: "A sculptural landmark shaped by movement, landscape and the sea.",
+    scenes: proposal02Scenes
+  },
+  {
+    id: "03",
+    title: "Design Proposal 03",
+    statement: "A twin landmark where architecture, landscape and water become one.",
+    place: "03 / 03 — Benghazi, Libya",
+    mainTitle: ["Design Proposal", "03"],
+    mainSubtitle: "A twin landmark where architecture, landscape and water become one.",
+    scenes: proposal03Scenes
+  }
+];
+
 /* --------------------------------------------------------------------------
    5. Hero film — silent frame-zero handoff and portrait tracking
    -------------------------------------------------------------------------- */
@@ -875,6 +1069,8 @@ const HeroFilm = {
     if (!this.el || !this.ready || this.started) return;
     this.started = true;
     this.el.currentTime = 0;
+    this.el.defaultPlaybackRate = 1;
+    this.el.playbackRate = 1;
     this.silence();
 
     try {
@@ -892,7 +1088,7 @@ const HeroFilm = {
     body.dataset.film = "playing";
     gsap.to(this.el, {
       opacity: 1,
-      duration: 2.6,
+      duration: Env.reducedMotion ? 0.35 : 0.78,
       ease: "power1.inOut",
       overwrite: true
     });
@@ -1132,40 +1328,29 @@ const Intro = {
 
     const tl = gsap.timeline({ paused: true, onComplete: () => Experience.finishIntro() });
 
-    tl/* 0–2.4s: deep, continuous atmosphere establishes forward travel. */
-      .to(haze, { opacity: 0.96, duration: 2.4, ease: "none" }, 0)
-      .to(near, { opacity: 0.58, scale: scale(1.038), xPercent: shift(1),    yPercent: shift(0.7), duration: 2.4, ease: "power1.inOut" }, 0)
-      .to(mid,  { opacity: 0.52, scale: scale(1.026), xPercent: shift(-0.8), yPercent: shift(0.5), duration: 2.4, ease: "power1.inOut" }, 0)
-      .to(far,  { opacity: 0.42, scale: scale(1.017), xPercent: shift(-1.2), yPercent: shift(0.5), duration: 2.4, ease: "power1.inOut" }, 0)
+    tl/* 0–0.7s: dense atmosphere, already moving forward. */
+      .to(haze, { opacity: 0.88, duration: 0.7, ease: "none" }, 0)
+      .to(near, { opacity: 0.64, scale: scale(1.042), xPercent: shift(0.5), yPercent: shift(0.4), duration: 0.7, ease: "power1.inOut" }, 0)
+      .to(mid,  { opacity: 0.56, scale: scale(1.03), xPercent: shift(-0.8), yPercent: shift(0.2), duration: 0.7, ease: "power1.inOut" }, 0)
+      .to(far,  { opacity: 0.4, scale: scale(1.018), xPercent: shift(-0.8), yPercent: shift(0.3), duration: 0.7, ease: "power1.inOut" }, 0)
 
-      /* 2.4–4.8s: overlap opens and warmer light enters. */
-      .to(haze, { opacity: 0.8, duration: 2.4, ease: "power1.inOut" }, 2.4)
-      .to(near, { opacity: 0.64, scale: scale(1.056), xPercent: shift(-1.4), yPercent: shift(-0.7), duration: 2.4, ease: "power1.inOut" }, 2.4)
-      .to(mid,  { opacity: 0.56, scale: scale(1.039), xPercent: shift(0.7),  yPercent: shift(-0.35), duration: 2.4, ease: "power1.inOut" }, 2.4)
-      .to(far,  { opacity: 0.37, scale: scale(1.028), xPercent: shift(-0.5), yPercent: shift(0), duration: 2.4, ease: "power1.inOut" }, 2.4)
+      /* 0.7–1.4s: accelerate smoothly; natural-speed footage starts under the haze. */
+      .call(() => AmbientSound.setStage("approach"), null, 0.7)
+      .call(() => HeroFilm.start(), null, 0.82)
+      .to(haze, { opacity: 0.48, duration: 0.7, ease: "power1.inOut" }, 0.7)
+      .to(near, { opacity: 0.4, scale: scale(1.075), xPercent: shift(-3.8), yPercent: shift(-2.3), duration: 0.7, ease: "power2.inOut" }, 0.7)
+      .to(mid,  { opacity: 0.38, scale: scale(1.052), xPercent: shift(1.9), yPercent: shift(-1.4), duration: 0.7, ease: "power2.inOut" }, 0.7)
+      .to(far,  { opacity: 0.28, scale: scale(1.039), xPercent: shift(0), yPercent: shift(-0.55), duration: 0.7, ease: "power2.inOut" }, 0.7)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 1.65, ease: "power1.inOut" }, 0)
 
-      /* 4.8–7.2s: exposure and direction converge on the film's first frame. */
-      .call(() => AmbientSound.setStage("approach"), null, 4.8)
-      .to(haze, { opacity: 0.5, duration: 2.4, ease: "power1.inOut" }, 4.8)
-      .to(near, { opacity: 0.36, scale: scale(1.075), xPercent: shift(-3.8), yPercent: shift(-2.3), duration: 2.4, ease: "power1.inOut" }, 4.8)
-      .to(mid,  { opacity: 0.38, scale: scale(1.052), xPercent: shift(1.9),  yPercent: shift(-1.4), duration: 2.4, ease: "power1.inOut" }, 4.8)
-      .to(far,  { opacity: 0.28, scale: scale(1.039), xPercent: shift(0),    yPercent: shift(-0.55), duration: 2.4, ease: "power1.inOut" }, 4.8)
-      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 7.25, ease: "power1.inOut" }, 0)
+      /* 1.4–2.0s: the real film becomes dominant inside the last mist. */
+      .to(haze, { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 1.4)
+      .to(near, { opacity: 0, scale: scale(1.105), xPercent: shift(-7), yPercent: shift(-5), duration: 0.54, ease: "power2.in" }, 1.4)
+      .to(mid,  { opacity: 0, scale: scale(1.078), xPercent: shift(3.4), yPercent: shift(-3.1), duration: 0.58, ease: "power2.in" }, 1.4)
+      .to(far,  { opacity: 0, scale: scale(1.06), xPercent: shift(0.7), yPercent: shift(-1.7), duration: 0.6, ease: "power1.inOut" }, 1.4);
 
-      /* 7.2–9.3s: decoded footage runs beneath the remaining atmospheric volume. */
-      .call(() => HeroFilm.start(), null, 6.7)
-      .to(haze, { opacity: 0.22, duration: 2.1, ease: "power1.inOut" }, 7.2)
-      .to(near, { opacity: 0.12, scale: scale(1.094), xPercent: shift(-6), yPercent: shift(-4), duration: 2.1, ease: "power1.inOut" }, 7.2)
-      .to(mid,  { opacity: 0.2,  scale: scale(1.066), xPercent: shift(2.8), yPercent: shift(-2.4), duration: 2.1, ease: "power1.inOut" }, 7.2)
-      .to(far,  { opacity: 0.18, scale: scale(1.05),  xPercent: shift(0.4), yPercent: shift(-1.2), duration: 2.1, ease: "power1.inOut" }, 7.2)
-
-      /* 9.1–10.6s: the tower establishes and the existing hero takes over. */
-      .to(haze, { opacity: 0, duration: 1.5, ease: "power1.inOut" }, 9.1)
-      .to(near, { opacity: 0, scale: scale(1.108), xPercent: shift(-7.5), yPercent: shift(-5), duration: 1.15, ease: "power1.inOut" }, 9.1)
-      .to(mid,  { opacity: 0, scale: scale(1.079), xPercent: shift(3.6), yPercent: shift(-3.2), duration: 1.35, ease: "power1.inOut" }, 9.1)
-      .to(far,  { opacity: 0, scale: scale(1.06),  xPercent: shift(0.7), yPercent: shift(-1.7), duration: 1.5, ease: "power1.inOut" }, 9.1);
-
-    this.appendReveal(tl, 9.45, 0.75);
+    /* Typography resolves over the running film after the cloud-only pre-roll. */
+    this.appendReveal(tl, 1.62, 0.72);
     this.tl = tl;
     this.prepared = true;
     return tl;
@@ -1201,6 +1386,96 @@ const Intro = {
   }
 };
 
+const ProposalState = {
+  current: 0,
+  prefetched: new Map(),
+
+  get active() { return proposalConfigs[this.current]; },
+
+  init() {
+    this.current = 0;
+    experienceConfig.scenes = proposalConfigs[0].scenes;
+    body.dataset.proposal = proposalConfigs[0].id;
+    body.dataset.main = "true";
+    body.dataset.finalScene = "false";
+  },
+
+  activate(index) {
+    this.current = Math.max(0, Math.min(proposalConfigs.length - 1, index));
+    experienceConfig.scenes = this.active.scenes;
+    body.dataset.proposal = this.active.id;
+    body.dataset.main = "true";
+    body.dataset.finalScene = "false";
+    this.updateMainCopy();
+  },
+
+  updateMainCopy() {
+    const proposal = this.active;
+    const place = $(".hero-type__place");
+    const lines = $$(".hero-type__title .line > span");
+    const subtitle = $(".hero-type__subtitle");
+    if (place) place.textContent = proposal.place;
+    lines.forEach((line, index) => { line.textContent = proposal.mainTitle[index] || ""; });
+    if (subtitle) subtitle.textContent = proposal.mainSubtitle;
+  },
+
+  prefetchMain(index) {
+    if (index <= 0 || index >= proposalConfigs.length) return Promise.resolve(false);
+    if (this.prefetched.has(index)) return this.prefetched.get(index);
+    const source = proposalConfigs[index].scenes[0].src;
+    const pending = new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = async () => {
+        try { await img.decode?.(); } catch (error) { /* decoded by onload */ }
+        resolve(true);
+      };
+      img.onerror = () => resolve(false);
+      img.src = source;
+    });
+    this.prefetched.set(index, pending);
+    return pending;
+  },
+
+  scheduleInitialPrefetch() {
+    const begin = () => this.prefetchMain(1);
+    if ("requestIdleCallback" in window) requestIdleCallback(begin, { timeout: 2200 });
+    else setTimeout(begin, 900);
+  },
+
+  canPrefetchThird() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return !connection?.saveData && !/^(slow-2g|2g)$/.test(connection?.effectiveType || "");
+  }
+};
+
+const ChapterTransition = {
+  el: $("#chapter-transition"),
+
+  play(chapter) {
+    if (!this.el || !chapter) return Promise.resolve();
+    const kicker = $("#chapter-kicker");
+    const title = $("#chapter-title");
+    const line = $("#chapter-line");
+    if (kicker) kicker.textContent = chapter.kicker || "";
+    if (title) {
+      title.textContent = chapter.title || "";
+      title.hidden = !chapter.title;
+    }
+    if (line) line.textContent = chapter.line || "";
+    const duration = Env.reducedMotion ? 0.45 : (chapter.duration || 0.85);
+    return new Promise((resolve) => {
+      const tl = gsap.timeline({ onComplete: resolve });
+      gsap.set(this.el, { autoAlpha: 0 });
+      tl.to(this.el, { autoAlpha: 1, duration: duration * 0.28, ease: "power1.out" }, 0)
+        .fromTo([kicker, title, line].filter(Boolean), { opacity: 0, y: 8 }, {
+          opacity: 1, y: 0, duration: duration * 0.34, stagger: duration * 0.05, ease: "power2.out"
+        }, duration * 0.08)
+        .to(this.el, { autoAlpha: 0, duration: duration * 0.28, ease: "power1.in" }, duration * 0.72);
+    });
+  }
+};
+
 /* --------------------------------------------------------------------------
    8. SceneDeck — manage cinematic layer DOM
    -------------------------------------------------------------------------- */
@@ -1208,84 +1483,117 @@ const Intro = {
 const SceneDeck = {
   layers: [],
   loaded: new Set(),
+  loadPromises: new Map(),
   current: 0,
 
-  render() {
+  createLayer(scene, index, { proposalIndex = ProposalState.current } = {}) {
+    const layer = document.createElement("figure");
+    layer.className = "cinema-layer";
+    layer.dataset.sceneIndex = String(index);
+    layer.dataset.sceneId = scene.id;
+    layer.dataset.transition = scene.transition;
+    layer.dataset.proposal = proposalConfigs[proposalIndex].id;
+    layer.dataset.final = String(!!scene.final);
+    layer.setAttribute("aria-hidden", "true");
+    layer.style.zIndex = String(index + 2);
+
+    const media = document.createElement("div");
+    media.className = "cinema-media";
+    const img = document.createElement("img");
+    img.alt = scene.description;
+    img.decoding = "async";
+    img.loading = index === 0 ? "eager" : "lazy";
+    img.fetchPriority = index === 0 ? "high" : "auto";
+    img.draggable = false;
+    img.dataset.src = scene.src;
+    img.dataset.mobileSrc = scene.mobileSrc || scene.src;
+    media.appendChild(img);
+
+    const life = document.createElement("div");
+    life.className = "scene-life";
+    life.setAttribute("aria-hidden", "true");
+    if (scene.life) life.dataset.life = scene.life.type;
+
+    if (scene.caption) {
+      const caption = document.createElement("figcaption");
+      caption.className = "scene-caption";
+      const indexLabel = document.createElement("span");
+      indexLabel.className = "scene-caption__index u-label";
+      indexLabel.textContent = scene.eyebrow.startsWith("P")
+        ? scene.eyebrow
+        : `${String(index + 1).padStart(2, "0")} — ${scene.eyebrow}`;
+      const title = document.createElement("h2");
+      title.textContent = scene.title;
+      const statement = document.createElement("p");
+      statement.textContent = scene.description;
+      caption.append(indexLabel, title, statement);
+      layer.append(media, life, caption);
+    } else {
+      layer.append(media, life);
+    }
+    return layer;
+  },
+
+  render({ adoptMain = null } = {}) {
     const stack = $("#scene-stack");
     const hero  = $(".cinema-layer--hero");
-    this.layers = [hero];
+    [...stack.children].forEach((child) => {
+      if (child !== adoptMain) child.remove();
+    });
+    this.loaded.clear();
+    this.loadPromises.clear();
+
+    let main;
+    if (ProposalState.current === 0) {
+      main = hero;
+      gsap.set(hero, { autoAlpha: 1, x: 0, scale: 1 });
+    } else {
+      main = adoptMain || this.createLayer(experienceConfig.scenes[0], 0);
+      if (!main.isConnected) stack.appendChild(main);
+      this.loaded.add(0);
+      gsap.set(hero, { autoAlpha: 0, x: 0, scale: 1 });
+    }
+    this.layers = [main];
 
     experienceConfig.scenes.slice(1).forEach((scene, offset) => {
       const index = offset + 1;
-      const layer = document.createElement("figure");
-      layer.className = "cinema-layer";
-      layer.dataset.sceneIndex  = String(index);
-      layer.dataset.sceneId     = scene.id;
-      layer.dataset.transition  = scene.transition;
-      layer.setAttribute("aria-hidden", "true");
-      layer.style.zIndex = String(index + 2);
-
-      const media = document.createElement("div");
-      media.className = "cinema-media";
-      const img = document.createElement("img");
-      img.alt         = scene.description;
-      img.decoding    = "async";
-      img.loading     = "lazy";
-      img.dataset.src       = scene.src;
-      img.dataset.mobileSrc = scene.mobileSrc;
-      media.appendChild(img);
-
-      const life = document.createElement("div");
-      life.className = "scene-life";
-      life.setAttribute("aria-hidden", "true");
-      if (scene.life) life.dataset.life = scene.life.type;
-
-      if (scene.caption) {
-        const caption = document.createElement("figcaption");
-        caption.className = "scene-caption";
-        const indexLabel  = document.createElement("span");
-        indexLabel.className   = "scene-caption__index u-label";
-        indexLabel.textContent = `${String(index + 1).padStart(2, "0")} — ${scene.eyebrow}`;
-        const title = document.createElement("h2");
-        title.textContent = scene.title;
-        const statement = document.createElement("p");
-        statement.textContent = scene.description;
-        caption.append(indexLabel, title, statement);
-        layer.append(media, life, caption);
-      } else {
-        layer.append(media, life);
-      }
+      const layer = this.createLayer(scene, index);
       stack.appendChild(layer);
       this.layers.push(layer);
     });
 
     this.applyFraming();
+    this.current = 0;
+    this.loadAround(0);
+  },
+
+  applyLayerFraming(layer, scene, mode = Env.mode) {
+    if (!layer || !scene) return;
+    const focus = scene.focus[mode] || scene.focus.desktop;
+    const scale = scene.scale[mode] || scene.scale.desktop;
+    const presentation = scene.presentation[mode] || scene.presentation.desktop;
+    layer.style.setProperty("--scene-focus", focus);
+    layer.style.setProperty("--scene-scale", String(scale || 1));
+    layer.style.setProperty("--scene-tone", scene.tone || "#101215");
+    layer.style.setProperty("--life-mask", scene.life?.mask || "none");
+    layer.style.setProperty("--life-opacity", String(scene.life?.opacity || 0));
+    layer.dataset.presentation = presentation;
+    const caption = $(".scene-caption", layer);
+    const captionStyle = this.captionFor(scene, mode);
+    if (caption && captionStyle) {
+      caption.dataset.side = captionStyle.side || "left";
+      caption.dataset.vertical = captionStyle.vertical || "bottom";
+      caption.dataset.tone = captionStyle.tone || "light";
+      caption.dataset.scrim = captionStyle.scrim || "dark";
+      caption.style.setProperty("--caption-width", captionStyle.maxWidth || "22rem");
+    }
   },
 
   applyFraming() {
     const mode = Env.mode;
     experienceConfig.scenes.forEach((scene, index) => {
       const layer = this.layers[index];
-      if (!layer) return;
-      const focus        = scene.focus[mode]        || scene.focus.desktop;
-      const scale        = scene.scale[mode]        || scene.scale.desktop;
-      const presentation = scene.presentation[mode] || scene.presentation.desktop;
-      layer.style.setProperty("--scene-focus",   focus);
-      layer.style.setProperty("--scene-scale",   String(scale || 1));
-      layer.style.setProperty("--scene-tone",    scene.tone || "#101215");
-      layer.style.setProperty("--life-mask",     scene.life?.mask || "none");
-      layer.style.setProperty("--life-opacity",  String(scene.life?.opacity || 0));
-      layer.dataset.presentation = presentation;
-
-      const caption      = $(".scene-caption", layer);
-      const captionStyle = this.captionFor(scene, mode);
-      if (caption && captionStyle) {
-        caption.dataset.side     = captionStyle.side     || "left";
-        caption.dataset.vertical = captionStyle.vertical || "bottom";
-        caption.dataset.tone     = captionStyle.tone     || "light";
-        caption.dataset.scrim    = captionStyle.scrim    || "dark";
-        caption.style.setProperty("--caption-width", captionStyle.maxWidth || "22rem");
-      }
+      this.applyLayerFraming(layer, scene, mode);
     });
   },
 
@@ -1307,18 +1615,27 @@ const SceneDeck = {
   },
 
   load(index) {
-    if (index <= 0 || index >= this.layers.length || this.loaded.has(index)) return;
+    if (index < 0 || index >= this.layers.length) return Promise.resolve(false);
+    if (ProposalState.current === 0 && index === 0) return Promise.resolve(true);
+    if (this.loadPromises.has(index)) return this.loadPromises.get(index);
     const img = $("img", this.layers[index]);
-    if (!img) return;
+    if (!img) return Promise.resolve(false);
     const source = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
     img.src = source;
     this.layers[index].style.setProperty("--scene-image", `url("${source}")`);
     this.loaded.add(index);
+    const pending = (img.decode ? img.decode() : new Promise((resolve, reject) => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", reject, { once: true });
+    })).then(() => true).catch(() => false);
+    this.loadPromises.set(index, pending);
+    return pending;
   },
 
   loadAround(index) {
     const keep  = new Set();
-    const start = body.dataset.state === "ready" ? Math.max(1, index - 1) : 1;
+    const first = ProposalState.current === 0 ? 1 : 0;
+    const start = body.dataset.state === "ready" ? Math.max(first, index - 1) : first;
     for (let i = start; i <= Math.min(this.layers.length - 1, index + 1); i++) {
       keep.add(i);
       this.load(i);
@@ -1330,7 +1647,22 @@ const SceneDeck = {
       if (img) img.removeAttribute("src");
       this.layers[li].style.removeProperty("--scene-image");
       this.loaded.delete(li);
+      this.loadPromises.delete(li);
     });
+  },
+
+  async prepareMainLayer(proposalIndex) {
+    if (proposalIndex === 0) return $(".cinema-layer--hero");
+    const scene = proposalConfigs[proposalIndex].scenes[0];
+    const layer = this.createLayer(scene, 0, { proposalIndex });
+    this.applyLayerFraming(layer, scene);
+    $("#scene-stack").appendChild(layer);
+    const img = $("img", layer);
+    const source = Env.mobile ? img.dataset.mobileSrc : img.dataset.src;
+    img.src = source;
+    layer.style.setProperty("--scene-image", `url("${source}")`);
+    try { await img.decode?.(); } catch (error) { /* retain tone fallback */ }
+    return layer;
   },
 
   setActive(index) {
@@ -1357,6 +1689,201 @@ const SceneDeck = {
       read:   blend(desktop.read,  mobile.read),
       end:    blend(desktop.end,   mobile.end)
     };
+  }
+};
+
+const ProposalNavigation = {
+  isTransitioning: false,
+  pointerActive: false,
+  pointerId: null,
+  pointerStartX: 0,
+  pointerStartY: 0,
+  pointerDX: 0,
+  pointerDY: 0,
+  wheelX: 0,
+  wheelTimer: null,
+  hintDismissed: false,
+  handlers: {},
+
+  canUse() {
+    return body.dataset.state === "ready" &&
+      SceneNavigation.currentScene === 0 &&
+      !SceneNavigation.isTransitioning &&
+      !this.isTransitioning &&
+      $("#menu")?.dataset.open !== "true";
+  },
+
+  showHint() {
+    if (this.hintDismissed) return;
+    const hint = $("#proposal-hint");
+    const label = $("#proposal-hint-label");
+    if (!hint) return;
+    if (label) label.textContent = (Env.mobile || Env.tabletPortrait || Env.tabletLandscape)
+      ? "Swipe to explore proposals"
+      : "Drag to explore proposals";
+    hint.classList.remove("is-dismissed");
+    gsap.to(hint, { autoAlpha: 0.72, duration: 0.55, ease: "power2.out", delay: 0.35 });
+  },
+
+  dismissHint() {
+    if (this.hintDismissed) return;
+    this.hintDismissed = true;
+    const hint = $("#proposal-hint");
+    if (!hint) return;
+    hint.classList.add("is-dismissed");
+    gsap.to(hint, { autoAlpha: 0, duration: 0.24, ease: "power1.out" });
+  },
+
+  setMainCopyFor(index) {
+    const proposal = proposalConfigs[index];
+    const place = $(".hero-type__place");
+    const lines = $$(".hero-type__title .line > span");
+    const subtitle = $(".hero-type__subtitle");
+    if (place) place.textContent = proposal.place;
+    lines.forEach((line, lineIndex) => { line.textContent = proposal.mainTitle[lineIndex] || ""; });
+    if (subtitle) subtitle.textContent = proposal.mainSubtitle;
+  },
+
+  resistance(direction) {
+    const layer = SceneDeck.layers[0];
+    if (!layer) return;
+    gsap.fromTo(layer, { x: direction * 7 }, { x: 0, duration: 0.32, ease: "power2.out", overwrite: true });
+  },
+
+  go(direction) {
+    if (!this.canUse()) return false;
+    const target = ProposalState.current + direction;
+    if (target < 0 || target >= proposalConfigs.length) {
+      this.resistance(direction);
+      return false;
+    }
+    this.switchTo(target, direction);
+    return true;
+  },
+
+  async switchTo(target, direction = Math.sign(target - ProposalState.current) || 1) {
+    if (!this.canUse() || target === ProposalState.current) return false;
+    this.isTransitioning = true;
+    body.dataset.proposalDragging = "false";
+
+    await ProposalState.prefetchMain(target);
+    const outgoing = SceneDeck.layers[0];
+    const incoming = await SceneDeck.prepareMainLayer(target);
+    if (!outgoing || !incoming) {
+      this.isTransitioning = false;
+      return false;
+    }
+
+    const distance = Env.reducedMotion ? 0 : (Env.mobile ? 42 : 58);
+    const duration = Env.reducedMotion ? 0.36 : 0.76;
+    const heroType = $(".hero-type");
+    const heroEdge = $(".hero-edge");
+    gsap.set(outgoing, { autoAlpha: 1, x: 0, scale: 1, zIndex: 5 });
+    gsap.set(incoming, { autoAlpha: 0, x: direction * distance, scale: Env.reducedMotion ? 1 : 0.996, zIndex: 6 });
+    incoming.setAttribute("aria-hidden", "false");
+    outgoing.setAttribute("aria-hidden", "true");
+
+    await new Promise((resolve) => {
+      const tl = gsap.timeline({ onComplete: resolve });
+      tl.to(heroType, { autoAlpha: 0, y: direction > 0 ? -6 : 6, duration: duration * 0.23, ease: "power1.in" }, 0)
+        .to(outgoing, {
+          autoAlpha: 0, x: -direction * distance, scale: Env.reducedMotion ? 1 : 0.996,
+          duration, ease: "power2.inOut"
+        }, 0)
+        .to(incoming, { autoAlpha: 1, x: 0, scale: 1, duration, ease: "power2.inOut" }, 0)
+        .to(heroEdge, { opacity: 0.86, duration: duration * 0.4, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0)
+        .call(() => this.setMainCopyFor(target), null, duration * 0.43)
+        .fromTo(heroType, { autoAlpha: 0, y: direction > 0 ? 7 : -7 }, {
+          autoAlpha: 1, y: 0, duration: duration * 0.34, ease: "power2.out"
+        }, duration * 0.6);
+    });
+
+    ProposalState.activate(target);
+    SceneDeck.render({ adoptMain: target === 0 ? null : incoming });
+    SceneNavigation.currentScene = 0;
+    SceneNavigation.setRestState(0);
+    SceneNavigation.updateHUD(0);
+    Interface.buildMenu();
+    this.dismissHint();
+    this.isTransitioning = false;
+
+    if (target === 1 && ProposalState.canPrefetchThird()) ProposalState.prefetchMain(2);
+    return true;
+  },
+
+  preview(dx) {
+    if (!this.canUse()) return;
+    const layer = SceneDeck.layers[0];
+    if (!layer) return;
+    gsap.set(layer, { x: Math.max(-18, Math.min(18, dx * 0.12)) });
+  },
+
+  settlePreview() {
+    const layer = SceneDeck.layers[0];
+    if (layer) gsap.to(layer, { x: 0, duration: 0.32, ease: "power2.out", overwrite: true });
+  },
+
+  finishTouch(dx, dy) {
+    if (!this.canUse() || Math.abs(dx) <= Math.abs(dy) * 1.25) return false;
+    const threshold = Env.mobile ? 56 : 64;
+    if (Math.abs(dx) >= threshold) this.go(dx < 0 ? 1 : -1);
+    else this.settlePreview();
+    return true;
+  },
+
+  onHorizontalWheel(deltaX) {
+    if (!this.canUse()) return;
+    this.wheelX += deltaX;
+    clearTimeout(this.wheelTimer);
+    this.wheelTimer = setTimeout(() => { this.wheelX = 0; }, 180);
+    if (Math.abs(this.wheelX) < 72) return;
+    const direction = this.wheelX > 0 ? 1 : -1;
+    this.wheelX = 0;
+    this.go(direction);
+  },
+
+  onPointerDown(event) {
+    if (event.pointerType === "touch" || event.button !== 0 || !this.canUse()) return;
+    if (event.target instanceof Element && event.target.closest("button, nav, audio")) return;
+    this.pointerActive = true;
+    this.pointerId = event.pointerId;
+    this.pointerStartX = event.clientX;
+    this.pointerStartY = event.clientY;
+    this.pointerDX = 0;
+    this.pointerDY = 0;
+    body.dataset.proposalDragging = "true";
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  },
+
+  onPointerMove(event) {
+    if (!this.pointerActive || event.pointerId !== this.pointerId) return;
+    this.pointerDX = event.clientX - this.pointerStartX;
+    this.pointerDY = event.clientY - this.pointerStartY;
+    if (Math.abs(this.pointerDX) > Math.abs(this.pointerDY) * 1.15) this.preview(this.pointerDX);
+  },
+
+  onPointerUp(event) {
+    if (!this.pointerActive || event.pointerId !== this.pointerId) return;
+    this.pointerActive = false;
+    body.dataset.proposalDragging = "false";
+    const horizontal = Math.abs(this.pointerDX) > Math.abs(this.pointerDY) * 1.25;
+    if (horizontal && Math.abs(this.pointerDX) >= 72) this.go(this.pointerDX < 0 ? 1 : -1);
+    else this.settlePreview();
+    this.pointerId = null;
+  },
+
+  bind() {
+    if (this.handlers.pointerdown) return;
+    const stage = $(".hero-stage");
+    this.handlers = {
+      pointerdown: this.onPointerDown.bind(this),
+      pointermove: this.onPointerMove.bind(this),
+      pointerup: this.onPointerUp.bind(this)
+    };
+    stage.addEventListener("pointerdown", this.handlers.pointerdown);
+    stage.addEventListener("pointermove", this.handlers.pointermove);
+    stage.addEventListener("pointerup", this.handlers.pointerup);
+    stage.addEventListener("pointercancel", this.handlers.pointerup);
   }
 };
 
@@ -1393,6 +1920,7 @@ const SceneNavigation = {
     this.updateHUD(this.currentScene);
     this.startAmbient(this.currentScene);
     Interface.buildMenu();
+    ProposalNavigation.bind();
   },
 
   transitionDuration() {
@@ -1404,7 +1932,9 @@ const SceneNavigation = {
 
   mediaFor(index) {
     const layer = SceneDeck.layers[index];
-    return index === 0 ? $(".hero-media") : $(".cinema-media img", layer);
+    return index === 0 && ProposalState.current === 0
+      ? $(".hero-media")
+      : $(".cinema-media img", layer);
   },
 
   setRestState(activeIndex = this.currentScene) {
@@ -1415,7 +1945,7 @@ const SceneNavigation = {
       const caption = $(".scene-caption", layer);
       const life    = $(".scene-life", layer);
       const active  = index === activeIndex;
-      const preserveLiveHero = index === 0 && active && HeroFilm.started && !HeroFilm.ended;
+      const preserveLiveHero = ProposalState.current === 0 && index === 0 && active && HeroFilm.started && !HeroFilm.ended;
 
       gsap.killTweensOf([layer, media, caption, life].filter(Boolean));
       gsap.set(layer, { autoAlpha: active ? 1 : 0, scale: 1, zIndex: active ? 5 : 1 });
@@ -1440,13 +1970,25 @@ const SceneNavigation = {
     gsap.set($(".hero-edge"), { opacity:   activeIndex === 0 ? 1 : 0 });
   },
 
-  goToScene(nextIndex, direction = Math.sign(nextIndex - this.currentScene) || 1) {
+  goToScene(nextIndex, direction = Math.sign(nextIndex - this.currentScene) || 1, { skipChapter = false } = {}) {
     const lastIndex = experienceConfig.scenes.length - 1;
     const target    = Math.max(0, Math.min(lastIndex, nextIndex));
     if (this.isTransitioning) return false;
     if (target === this.currentScene) return false;
     if (body.dataset.state !== "ready") return false;
     if ($("#menu")?.dataset.open === "true") return false;
+    if (ProposalNavigation.isTransitioning) return false;
+
+    const chapter = experienceConfig.scenes[target]?.chapter;
+    if (chapter && direction > 0 && !skipChapter) {
+      this.isTransitioning = true;
+      this.dismissCue();
+      ChapterTransition.play(chapter).finally(() => {
+        this.isTransitioning = false;
+        this.goToScene(target, direction, { skipChapter: true });
+      });
+      return true;
+    }
 
     this.isTransitioning = true;
     this.dismissCue();
@@ -1471,7 +2013,7 @@ const SceneNavigation = {
     }, safetyMs);
 
     /* Stop hero-only motion after the first departure. */
-    if (this.currentScene === 0) {
+    if (ProposalState.current === 0 && this.currentScene === 0) {
       HeroFilm.leaveHero();
       Atmosphere.stopAfterHero();
     }
@@ -1583,13 +2125,19 @@ const SceneNavigation = {
   updateHUD(index) {
     const label = $("#hud-progress-label");
     const bar   = $(".hud__progress-bar");
-    const count = experienceConfig.scenes.length;
-    const text  =
-      String(index + 1).padStart(2, "0") + " / " +
-      String(count).padStart(2, "0") + " — " +
-      experienceConfig.scenes[index].label;
+    const verticalCount = experienceConfig.scenes.length - 1;
+    const text = index === 0
+      ? `${ProposalState.active.id} / 03 — ${ProposalState.active.title.toUpperCase()}`
+      : `${String(index).padStart(2, "0")} / ${String(verticalCount).padStart(2, "0")} — ${experienceConfig.scenes[index].label}`;
     if (label && label.textContent !== text) label.textContent = text;
-    if (bar) gsap.to(bar, { scaleX: count > 1 ? index / (count - 1) : 1, duration: 0.34, ease: "power2.out" });
+    if (bar) {
+      const progress = index === 0
+        ? ProposalState.current / (proposalConfigs.length - 1)
+        : index / Math.max(1, verticalCount);
+      gsap.to(bar, { scaleX: progress, duration: 0.34, ease: "power2.out" });
+    }
+    body.dataset.main = String(index === 0);
+    body.dataset.finalScene = String(!!experienceConfig.scenes[index]?.final);
   },
 
   dismissCue() {
@@ -1638,10 +2186,16 @@ const SceneNavigation = {
 
   onWheel(event) {
     if (body.dataset.state !== "ready" || $("#menu")?.dataset.open === "true") return;
-    event.preventDefault();
     const modeMultiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+    const horizontal = event.deltaX * modeMultiplier;
     const delta     = event.deltaY * modeMultiplier;
+    if (this.currentScene === 0 && Math.abs(horizontal) > Math.abs(delta) * 1.35 && Math.abs(horizontal) > 3) {
+      event.preventDefault();
+      ProposalNavigation.onHorizontalWheel(horizontal);
+      return;
+    }
     if (!Number.isFinite(delta) || Math.abs(delta) < 0.5) return;
+    event.preventDefault();
     const now       = performance.now();
     const direction = Math.sign(delta);
     const prev      = this.wheelDirection;
@@ -1690,6 +2244,11 @@ const SceneNavigation = {
     if (!touch) return;
     const dy = touch.clientY - this.touchStartY;
     const dx = touch.clientX - this.touchStartX;
+    if (this.currentScene === 0 && Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 6) {
+      event.preventDefault();
+      ProposalNavigation.preview(dx);
+      return;
+    }
     /* Prevent browser scroll only for clearly vertical swipes */
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
       event.preventDefault();
@@ -1705,6 +2264,7 @@ const SceneNavigation = {
     if (!touch) return;
     const dy        = touch.clientY - this.touchStartY;
     const dx        = touch.clientX - this.touchStartX;
+    if (this.currentScene === 0 && ProposalNavigation.finishTouch(dx, dy)) return;
     const threshold = Env.mobile ? 48 : 54;
     if (Math.abs(dy) < threshold || Math.abs(dy) < Math.abs(dx) * 1.1) return;
     this.navigate(dy < 0 ? 1 : -1);
@@ -1716,6 +2276,11 @@ const SceneNavigation = {
     if (body.dataset.state !== "ready") return;
     if ($("#menu")?.dataset.open === "true") return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName) || event.target?.isContentEditable) return;
+    if (this.currentScene === 0 && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      ProposalNavigation.go(event.key === "ArrowRight" ? 1 : -1);
+      return;
+    }
     const forward  = ["ArrowDown", "PageDown", " "];
     const backward = ["ArrowUp", "PageUp"];
     if (!forward.includes(event.key) && !backward.includes(event.key)) return;
@@ -1796,9 +2361,29 @@ const Interface = {
     const list = $("#menu-list");
     if (!list) return;
     list.innerHTML = "";
-    this.menuEntries.forEach((entry, entryIndex) => {
+    const heading = document.createElement("li");
+    heading.className = "menu__heading u-label";
+    heading.textContent = ProposalState.active.title;
+    list.appendChild(heading);
+
+    const entries = ProposalState.current === 0
+      ? this.menuEntries
+      : experienceConfig.scenes.slice(1).map((scene) => ({ label: scene.title.toUpperCase(), sceneId: scene.id }));
+
+    entries.forEach((entry, entryIndex) => {
       const sceneIndex = experienceConfig.scenes.findIndex((s) => s.id === entry.sceneId);
       if (sceneIndex < 0) return;
+      const scene = experienceConfig.scenes[sceneIndex];
+      if (scene.chapter?.title) {
+        const chapter = document.createElement("li");
+        chapter.className = "menu__chapter";
+        const kicker = document.createElement("span");
+        kicker.textContent = scene.chapter.kicker;
+        const title = document.createElement("strong");
+        title.textContent = scene.chapter.title;
+        chapter.append(kicker, title);
+        list.appendChild(chapter);
+      }
       const li  = document.createElement("li");
       li.className = "menu__item";
       const btn = document.createElement("button");
@@ -1809,7 +2394,9 @@ const Interface = {
       idx.className   = "menu__index";
       idx.textContent = String(entryIndex + 1).padStart(2, "0");
       btn.append(idx, entry.label);
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        await SceneDeck.load(sceneIndex);
         this.hide(false);
         requestAnimationFrame(() => SceneNavigation.goToScene(sceneIndex));
       });
@@ -1878,6 +2465,7 @@ const Interface = {
 const Experience = {
   async start() {
     /* The one global soundtrack gets the earliest possible audible attempt. */
+    ProposalState.init();
     AmbientSound.init();
     SceneDeck.render();
     this.applyFraming();
@@ -1929,9 +2517,12 @@ const Experience = {
 
     /* 5. Start navigation */
     SceneNavigation.build();
+    ProposalNavigation.showHint();
+    ProposalState.scheduleInitialPrefetch();
 
-    /* 6. The live film keeps the hero moving; final mist begins on its end frame. */
-    if (!HeroFilm.started || HeroFilm.ended) Atmosphere.start(Loader.heroSrc);
+    /* 6. Guarantee the decoded film handoff even after an accelerated skip. */
+    if (!HeroFilm.started && HeroFilm.ready) HeroFilm.start();
+    if ((!HeroFilm.started && !HeroFilm.ready) || HeroFilm.ended) Atmosphere.start(Loader.heroSrc);
   },
 
   bindGlobal() {
@@ -1973,10 +2564,21 @@ const Experience = {
             ? "Swipe to explore"
             : "Scroll to explore";
         }
+        const proposalHint = $("#proposal-hint-label");
+        if (proposalHint) {
+          proposalHint.textContent = (Env.mobile || Env.tabletPortrait || Env.tabletLandscape)
+            ? "Swipe to explore proposals"
+            : "Drag to explore proposals";
+        }
 
         if (wasMobile !== Env.mobile) SceneDeck.refreshSources();
         this.applyFraming();
-        HeroFilm.syncTracking(HeroFilm.started && !HeroFilm.ended && !HeroFilm.el.paused);
+        const liveFilm = HeroFilm.started && !HeroFilm.ended;
+        HeroFilm.syncTracking(liveFilm && !HeroFilm.el.paused);
+        if (liveFilm && HeroFilm.el.paused) {
+          HeroFilm.silence();
+          HeroFilm.el.play().then(() => HeroFilm.syncTracking(true)).catch(() => {});
+        }
 
         if (body.dataset.state === "ready") {
           /* Force-unlock: orientation change may have interrupted a transition */
@@ -1997,6 +2599,7 @@ if (window.gsap) {
   Experience.start();
 } else {
   /* No GSAP: static fallback */
+  ProposalState.init();
   AmbientSound.init();
   SceneDeck.render();
   Experience.applyFraming();
