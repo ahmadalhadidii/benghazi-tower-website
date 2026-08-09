@@ -15,7 +15,7 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
 test("updated cinematic assets use one stable cache version", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   for (const asset of ["styles.css", "script.js", "benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
-    expect(html).toContain(`${asset}?v=20260809-cinematic5`);
+    expect(html).toContain(`${asset}?v=20260809-cinematic6`);
   }
 });
 
@@ -140,7 +140,7 @@ async function captureArrival(page, viewport, name) {
     });
   };
 
-  for (const at of [0, 4, 8, 12, 13.5, 16, 18]) {
+  for (const at of [0, 2.5, 5, 7, 8.5, 9.5, 10.4]) {
     if (at > 0) {
       await page.waitForFunction(
         (target) => document.body.dataset.state === "ready" || Intro.tl.time() >= target,
@@ -198,12 +198,12 @@ function expectCompletedArrival(result) {
   const ambient = result.readings.find((reading) => reading.t === "ambient");
   expect(ready.state).toBe("ready");
   expect(ready.hud).toBeGreaterThan(0.95);
-  expect(ready.intro.elapsed).toBeGreaterThan(18000);
-  expect(ready.intro.elapsed).toBeLessThan(21000);
+  expect(ready.intro.elapsed).toBeGreaterThan(10000);
+  expect(ready.intro.elapsed).toBeLessThan(11500);
   expect(ambient.filmState).toBe("ended");
   expect(ambient.mist.some((value) => value > 0.04)).toBeTruthy();
-  expect(result.readings[0].intro.duration).toBeGreaterThan(18);
-  expect(result.readings[0].intro.duration).toBeLessThan(20);
+  expect(result.readings[0].intro.duration).toBeGreaterThan(10);
+  expect(result.readings[0].intro.duration).toBeLessThan(11);
   expect(result.readings[0].audio.loop).toBeTruthy();
   expect(result.readings[0].audio.instances).toBe(1);
   expect(result.readings[0].audio.source).toContain("assets/audio/benghazi-ambient.mp3");
@@ -235,7 +235,7 @@ for (const [name, viewport] of [
     expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.06);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
     expect(result.readings[1].audio.muted).toBeFalsy();
-    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 3);
+    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 2);
     expect(result.readings[4].video.currentTime).toBeGreaterThan(0.2);
     expect(result.readings[4].hud).toBeLessThan(0.1);
     expect(result.readings[6].clouds.every((value) => value < 0.1)).toBeTruthy();
@@ -274,7 +274,7 @@ test("retina-like desktop keeps the atmosphere procedural through the film hando
   expect(firstFrame.layers).toHaveLength(3);
   expect(firstFrame.layers.every((layer) => !layer.image.includes("url(") && layer.filter === "none")).toBeTruthy();
   expect(Math.max(...firstFrame.layers.map((layer) => layer.scale))).toBeLessThanOrEqual(1.03);
-  await page.waitForFunction(() => Intro.tl.time() >= 13.5, null, { timeout: 20000 });
+  await page.waitForFunction(() => Intro.tl.time() >= 8.2, null, { timeout: 15000 });
   const handoff = await page.evaluate(() => {
     const video = document.querySelector("#hero-video");
     return { readyState: video.readyState, currentTime: video.currentTime, opacity: Number(getComputedStyle(video).opacity) };
@@ -292,8 +292,8 @@ test("master arrival stays active for the full cinematic journey", async ({ page
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
 
   const timelineDuration = await page.evaluate(() => Intro.tl.duration());
-  expect(timelineDuration).toBeGreaterThan(18);
-  expect(timelineDuration).toBeLessThan(20);
+  expect(timelineDuration).toBeGreaterThan(10);
+  expect(timelineDuration).toBeLessThan(11);
 
   await page.mouse.wheel(0, 900);
   await page.keyboard.press("ArrowDown");
@@ -309,7 +309,8 @@ test("master arrival stays active for the full cinematic journey", async ({ page
     const end = performance.getEntriesByName("benghazi-interactive").at(-1)?.startTime;
     return end - start;
   });
-  expect(elapsed).toBeGreaterThan(18000);
+  expect(elapsed).toBeGreaterThan(10000);
+  expect(elapsed).toBeLessThan(11500);
 });
 
 test("reduced motion preserves the full journey with restrained movement", async ({ page }) => {
@@ -319,8 +320,8 @@ test("reduced motion preserves the full journey with restrained movement", async
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
   const duration = await page.evaluate(() => Intro.tl.duration());
-  expect(duration).toBeGreaterThan(18);
-  expect(duration).toBeLessThan(20);
+  expect(duration).toBeGreaterThan(10);
+  expect(duration).toBeLessThan(11);
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 22000 });
   await expect(page.locator("#hero-image")).toBeVisible();
   await expect(page.locator(".hud")).toBeVisible();

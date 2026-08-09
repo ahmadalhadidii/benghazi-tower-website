@@ -591,11 +591,12 @@ const AmbientSound = {
 
   init() {
     if (this.bound || !this.el) return;
+    const earlyBoot = window.__benghaziAmbientBoot;
     this.bound = true;
     this.el.loop = true;
     this.el.muted = false;
     this.el.volume = this.targetGain();
-    this.timelineStartedAt = performance.now();
+    this.timelineStartedAt = earlyBoot?.startedAt || performance.now();
     body.dataset.audio = "starting";
     this.updateButton();
 
@@ -622,7 +623,17 @@ const AmbientSound = {
     document.addEventListener("wheel", this._firstWheel, { capture: true, passive: true });
     document.addEventListener("keydown", this._firstKey, { capture: true });
     this.el.addEventListener("ended", () => this.ensurePlaying());
-    this.enable({ autoplay: true });
+    if (earlyBoot?.promise) {
+      this.playPromise = earlyBoot.promise;
+      this.enable({ autoplay: true });
+    } else if (earlyBoot?.started || !this.el.paused) {
+      this.enable({ autoplay: true });
+    } else if (earlyBoot?.attempted && earlyBoot.lastResult === false) {
+      body.dataset.audio = "blocked";
+      this.updateButton();
+    } else {
+      this.enable({ autoplay: true });
+    }
   },
 
   startFromInteraction() {
@@ -647,6 +658,7 @@ const AmbientSound = {
     this._firstClick = null;
     this._firstWheel = null;
     this._firstKey = null;
+    window.__benghaziAmbientBoot?.remove?.();
   },
 
   ensurePlaying() {
@@ -1120,40 +1132,40 @@ const Intro = {
 
     const tl = gsap.timeline({ paused: true, onComplete: () => Experience.finishIntro() });
 
-    tl/* 0–4s: dense, continuous atmosphere establishes forward travel. */
-      .to(haze, { opacity: 0.97, duration: 4, ease: "none" }, 0)
-      .to(near, { opacity: 0.58, scale: scale(1.038), xPercent: shift(1),    yPercent: shift(0.7), duration: 4, ease: "power1.inOut" }, 0)
-      .to(mid,  { opacity: 0.52, scale: scale(1.026), xPercent: shift(-0.8), yPercent: shift(0.5), duration: 4, ease: "power1.inOut" }, 0)
-      .to(far,  { opacity: 0.42, scale: scale(1.017), xPercent: shift(-1.2), yPercent: shift(0.5), duration: 4, ease: "power1.inOut" }, 0)
+    tl/* 0–2.4s: deep, continuous atmosphere establishes forward travel. */
+      .to(haze, { opacity: 0.96, duration: 2.4, ease: "none" }, 0)
+      .to(near, { opacity: 0.58, scale: scale(1.038), xPercent: shift(1),    yPercent: shift(0.7), duration: 2.4, ease: "power1.inOut" }, 0)
+      .to(mid,  { opacity: 0.52, scale: scale(1.026), xPercent: shift(-0.8), yPercent: shift(0.5), duration: 2.4, ease: "power1.inOut" }, 0)
+      .to(far,  { opacity: 0.42, scale: scale(1.017), xPercent: shift(-1.2), yPercent: shift(0.5), duration: 2.4, ease: "power1.inOut" }, 0)
 
-      /* 4–8s: overlap shifts as warmer light begins to enter. */
-      .to(haze, { opacity: 0.82, duration: 4, ease: "power1.inOut" }, 4)
-      .to(near, { opacity: 0.66, scale: scale(1.058), xPercent: shift(-1.5), yPercent: shift(-0.8), duration: 4, ease: "power1.inOut" }, 4)
-      .to(mid,  { opacity: 0.58, scale: scale(1.04),  xPercent: shift(0.8),  yPercent: shift(-0.4), duration: 4, ease: "power1.inOut" }, 4)
-      .to(far,  { opacity: 0.38, scale: scale(1.029), xPercent: shift(-0.5), yPercent: shift(0), duration: 4, ease: "power1.inOut" }, 4)
+      /* 2.4–4.8s: overlap opens and warmer light enters. */
+      .to(haze, { opacity: 0.8, duration: 2.4, ease: "power1.inOut" }, 2.4)
+      .to(near, { opacity: 0.64, scale: scale(1.056), xPercent: shift(-1.4), yPercent: shift(-0.7), duration: 2.4, ease: "power1.inOut" }, 2.4)
+      .to(mid,  { opacity: 0.56, scale: scale(1.039), xPercent: shift(0.7),  yPercent: shift(-0.35), duration: 2.4, ease: "power1.inOut" }, 2.4)
+      .to(far,  { opacity: 0.37, scale: scale(1.028), xPercent: shift(-0.5), yPercent: shift(0), duration: 2.4, ease: "power1.inOut" }, 2.4)
 
-      /* 8–12s: scale, exposure and direction converge on the film's first frame. */
-      .to(haze, { opacity: 0.55, duration: 4, ease: "power1.inOut" }, 8)
-      .to(near, { opacity: 0.38, scale: scale(1.078), xPercent: shift(-4), yPercent: shift(-2.5), duration: 4, ease: "power1.inOut" }, 8)
-      .to(mid,  { opacity: 0.4,  scale: scale(1.054), xPercent: shift(2),  yPercent: shift(-1.5), duration: 4, ease: "power1.inOut" }, 8)
-      .to(far,  { opacity: 0.3,  scale: scale(1.04),  xPercent: shift(0),  yPercent: shift(-0.6), duration: 4, ease: "power1.inOut" }, 8)
-      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 12.3, ease: "power1.inOut" }, 0)
+      /* 4.8–7.2s: exposure and direction converge on the film's first frame. */
+      .call(() => AmbientSound.setStage("approach"), null, 4.8)
+      .to(haze, { opacity: 0.5, duration: 2.4, ease: "power1.inOut" }, 4.8)
+      .to(near, { opacity: 0.36, scale: scale(1.075), xPercent: shift(-3.8), yPercent: shift(-2.3), duration: 2.4, ease: "power1.inOut" }, 4.8)
+      .to(mid,  { opacity: 0.38, scale: scale(1.052), xPercent: shift(1.9),  yPercent: shift(-1.4), duration: 2.4, ease: "power1.inOut" }, 4.8)
+      .to(far,  { opacity: 0.28, scale: scale(1.039), xPercent: shift(0),    yPercent: shift(-0.55), duration: 2.4, ease: "power1.inOut" }, 4.8)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 7.25, ease: "power1.inOut" }, 0)
 
-      /* 12–16s: the decoded MP4 runs underneath the continuous atmosphere. */
-      .call(() => AmbientSound.setStage("approach"), null, 8)
-      .call(() => HeroFilm.start(), null, 11.8)
-      .to(haze, { opacity: 0.26, duration: 4, ease: "power1.inOut" }, 12)
-      .to(near, { opacity: 0.14, scale: scale(1.098), xPercent: shift(-6.5), yPercent: shift(-4.4), duration: 4, ease: "power1.inOut" }, 12)
-      .to(mid,  { opacity: 0.22, scale: scale(1.068), xPercent: shift(3),    yPercent: shift(-2.6), duration: 4, ease: "power1.inOut" }, 12)
-      .to(far,  { opacity: 0.21, scale: scale(1.052), xPercent: shift(0.5),  yPercent: shift(-1.3), duration: 4, ease: "power1.inOut" }, 12)
+      /* 7.2–9.3s: decoded footage runs beneath the remaining atmospheric volume. */
+      .call(() => HeroFilm.start(), null, 6.7)
+      .to(haze, { opacity: 0.22, duration: 2.1, ease: "power1.inOut" }, 7.2)
+      .to(near, { opacity: 0.12, scale: scale(1.094), xPercent: shift(-6), yPercent: shift(-4), duration: 2.1, ease: "power1.inOut" }, 7.2)
+      .to(mid,  { opacity: 0.2,  scale: scale(1.066), xPercent: shift(2.8), yPercent: shift(-2.4), duration: 2.1, ease: "power1.inOut" }, 7.2)
+      .to(far,  { opacity: 0.18, scale: scale(1.05),  xPercent: shift(0.4), yPercent: shift(-1.2), duration: 2.1, ease: "power1.inOut" }, 7.2)
 
-      /* 16–18.6s: the film becomes dominant and the tower naturally establishes. */
-      .to(haze, { opacity: 0, duration: 2.6, ease: "power1.inOut" }, 16)
-      .to(near, { opacity: 0, scale: scale(1.115), xPercent: shift(-8), yPercent: shift(-5.4), duration: 1.8, ease: "power1.inOut" }, 16)
-      .to(mid,  { opacity: 0, scale: scale(1.082), xPercent: shift(3.8), yPercent: shift(-3.4), duration: 2.25, ease: "power1.inOut" }, 16)
-      .to(far,  { opacity: 0, scale: scale(1.062), xPercent: shift(0.8), yPercent: shift(-1.8), duration: 2.4, ease: "power1.inOut" }, 16);
+      /* 9.1–10.6s: the tower establishes and the existing hero takes over. */
+      .to(haze, { opacity: 0, duration: 1.5, ease: "power1.inOut" }, 9.1)
+      .to(near, { opacity: 0, scale: scale(1.108), xPercent: shift(-7.5), yPercent: shift(-5), duration: 1.15, ease: "power1.inOut" }, 9.1)
+      .to(mid,  { opacity: 0, scale: scale(1.079), xPercent: shift(3.6), yPercent: shift(-3.2), duration: 1.35, ease: "power1.inOut" }, 9.1)
+      .to(far,  { opacity: 0, scale: scale(1.06),  xPercent: shift(0.7), yPercent: shift(-1.7), duration: 1.5, ease: "power1.inOut" }, 9.1);
 
-    this.appendReveal(tl, 17.05, 0.9);
+    this.appendReveal(tl, 9.45, 0.75);
     this.tl = tl;
     this.prepared = true;
     return tl;
