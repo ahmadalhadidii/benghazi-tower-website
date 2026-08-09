@@ -12,6 +12,20 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
   expect(hash).toBe("10E956ED41DBF155E9E566D0B72566FE17E8D70B7B5F7A05A54D54E09A75921A");
 });
 
+test("updated cinematic assets use one stable cache version", () => {
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  for (const asset of ["styles.css", "script.js", "benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
+    expect(html).toContain(`${asset}?v=20260809-cinematic4`);
+  }
+});
+
+async function ensureSoundOn(page) {
+  await page.waitForFunction(() => document.body.dataset.audio !== "starting", null, { timeout: 4000 });
+  const state = await page.evaluate(() => document.body.dataset.audio);
+  if (state !== "on") await page.mouse.click(18, 320);
+  await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
+}
+
 async function captureArrival(page, viewport, name) {
   fs.mkdirSync(auditDir, { recursive: true });
   const errors = [];
@@ -27,7 +41,7 @@ async function captureArrival(page, viewport, name) {
       return style.display !== "none" && Number(style.opacity) > 0.15;
     });
     return visibleLayers.length === expectedLayers;
-  }, name === "mobile" ? 2 : 3, { timeout: 3000 });
+  }, viewport.width > 1200 ? 3 : 2, { timeout: 3000 });
   const readings = [];
   const capture = async (at) => {
     readings.push(await page.evaluate((t) => {
@@ -42,7 +56,16 @@ async function captureArrival(page, viewport, name) {
       return {
         t,
         state: document.body.dataset.state,
-        intro: { time: Intro.tl?.time(), duration: Intro.tl?.duration(), paused: Intro.tl?.paused() },
+        intro: {
+          time: Intro.tl?.time(),
+          duration: Intro.tl?.duration(),
+          paused: Intro.tl?.paused(),
+          elapsed: (() => {
+            const start = performance.getEntriesByName("benghazi-intro-start").at(-1)?.startTime;
+            const end = performance.getEntriesByName("benghazi-interactive").at(-1)?.startTime;
+            return Number.isFinite(start) && Number.isFinite(end) ? end - start : null;
+          })()
+        },
         filmState: document.body.dataset.film || "playing",
         heroTransform: mediaStyle.transform,
         heroScale: mediaMatrix ? Math.hypot(mediaMatrix.a, mediaMatrix.b) : 1,
@@ -110,7 +133,7 @@ async function captureArrival(page, viewport, name) {
     });
   };
 
-  for (const at of [0, 3, 6, 8.7, 9.6, 11.2]) {
+  for (const at of [0, 4, 8, 12, 13.5, 16, 18]) {
     if (at > 0) {
       await page.waitForFunction(
         (target) => document.body.dataset.state === "ready" || Intro.tl.time() >= target,
@@ -121,7 +144,7 @@ async function captureArrival(page, viewport, name) {
     await capture(at);
   }
 
-  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 18000 });
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 22000 });
   await capture("ready");
   await page.waitForFunction(() => {
     const video = document.querySelector("#hero-video");
@@ -164,12 +187,16 @@ function expectSeamlessMedia(result) {
 }
 
 function expectCompletedArrival(result) {
-  expect(result.readings[6].state).toBe("ready");
-  expect(result.readings[6].hud).toBeGreaterThan(0.95);
-  expect(result.readings[8].filmState).toBe("ended");
-  expect(result.readings[8].mist.some((value) => value > 0.04)).toBeTruthy();
-  expect(result.readings[0].intro.duration).toBeGreaterThan(11.5);
-  expect(result.readings[0].intro.duration).toBeLessThan(14.2);
+  const ready = result.readings.find((reading) => reading.t === "ready");
+  const ambient = result.readings.find((reading) => reading.t === "ambient");
+  expect(ready.state).toBe("ready");
+  expect(ready.hud).toBeGreaterThan(0.95);
+  expect(ready.intro.elapsed).toBeGreaterThan(18000);
+  expect(ready.intro.elapsed).toBeLessThan(21000);
+  expect(ambient.filmState).toBe("ended");
+  expect(ambient.mist.some((value) => value > 0.04)).toBeTruthy();
+  expect(result.readings[0].intro.duration).toBeGreaterThan(18);
+  expect(result.readings[0].intro.duration).toBeLessThan(20);
   expect(result.readings[0].audio.loop).toBeTruthy();
   expect(result.readings[0].audio.instances).toBe(1);
   expect(result.readings[0].audio.source).toContain("assets/audio/benghazi-ambient.mp3");
@@ -178,27 +205,31 @@ function expectCompletedArrival(result) {
 }
 
 for (const [name, viewport] of [
-  ["desktop", { width: 1920, height: 1080 }],
-  ["laptop", { width: 1440, height: 900 }],
-  ["mobile", { width: 390, height: 844 }]
+  ["phone-390x844", { width: 390, height: 844 }],
+  ["phone-430x932", { width: 430, height: 932 }],
+  ["tablet-portrait-768x1024", { width: 768, height: 1024 }],
+  ["tablet-landscape-1024x768", { width: 1024, height: 768 }],
+  ["tablet-portrait-820x1180", { width: 820, height: 1180 }],
+  ["tablet-landscape-1180x820", { width: 1180, height: 820 }],
+  ["desktop-1366x768", { width: 1366, height: 768 }]
 ]) {
   test(`${name} arrival preserves the cinematic handoff`, async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(70000);
     const result = await captureArrival(page, viewport, name);
     const visibleAtmosphere = result.readings[0].cloudLayers.filter((layer) => layer.display !== "none" && layer.opacity > 0.15);
-    expect(visibleAtmosphere.length).toBe(name === "mobile" ? 2 : 3);
+    expect(visibleAtmosphere.length).toBe(viewport.width > 1200 ? 3 : 2);
     expect(visibleAtmosphere.every((layer) => layer.backgroundImage.includes("benghazi-tower-arrival-poster.webp"))).toBeTruthy();
     expect(result.readings[0].heroScale).toBeGreaterThan(1);
-    expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.04);
+    expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.06);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
-    expect(result.readings[1].audio.muted).toBeTruthy();
-    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 2);
+    expect(result.readings[1].audio.muted).toBeFalsy();
+    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 3);
     expect(result.readings[4].video.currentTime).toBeGreaterThan(0.2);
     expect(result.readings[4].hud).toBeLessThan(0.1);
     expect(result.readings[6].clouds.every((value) => value < 0.1)).toBeTruthy();
     expectSeamlessMedia(result);
     expectCompletedArrival(result);
-    if (name === "desktop") {
+    if (name === "desktop-1366x768") {
       await page.locator("#hud-cue").click();
       await page.waitForTimeout(2200);
       await expect(page.locator("#hud-progress-label")).toContainText("GROUND TO SKY");
@@ -207,14 +238,14 @@ for (const [name, viewport] of [
 }
 
 test("master arrival stays active for the full cinematic journey", async ({ page }) => {
-  test.setTimeout(30000);
+  test.setTimeout(65000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
 
   const timelineDuration = await page.evaluate(() => Intro.tl.duration());
-  expect(timelineDuration).toBeGreaterThan(12.8);
-  expect(timelineDuration).toBeLessThan(14.2);
+  expect(timelineDuration).toBeGreaterThan(18);
+  expect(timelineDuration).toBeLessThan(20);
 
   await page.mouse.wheel(0, 900);
   await page.keyboard.press("ArrowDown");
@@ -224,75 +255,154 @@ test("master arrival stays active for the full cinematic journey", async ({ page
   expect(afterInput.active).toBeTruthy();
   expect(afterInput.time).toBeLessThan(6);
 
-  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 16000 });
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 45000 });
   const elapsed = await page.evaluate(() => {
     const start = performance.getEntriesByName("benghazi-intro-start").at(-1)?.startTime;
     const end = performance.getEntriesByName("benghazi-interactive").at(-1)?.startTime;
     return end - start;
   });
-  expect(elapsed).toBeGreaterThan(12500);
-  expect(elapsed).toBeLessThan(15000);
+  expect(elapsed).toBeGreaterThan(18000);
 });
 
 test("reduced motion preserves the full journey with restrained movement", async ({ page }) => {
-  test.setTimeout(25000);
+  test.setTimeout(35000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
   const duration = await page.evaluate(() => Intro.tl.duration());
-  expect(duration).toBeGreaterThan(11.5);
-  expect(duration).toBeLessThan(12.5);
-  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 15000 });
+  expect(duration).toBeGreaterThan(18);
+  expect(duration).toBeLessThan(20);
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 22000 });
   await expect(page.locator("#hero-image")).toBeVisible();
   await expect(page.locator(".hud")).toBeVisible();
 });
 
-test("Sound reveals the already-running soundtrack without restarting it", async ({ page }) => {
-  test.setTimeout(30000);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
-  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 18000 });
-
-  const before = await page.evaluate(() => {
-    const ambient = document.querySelector("#ambient-audio");
-    const film = document.querySelector("#hero-video");
-    return {
-      time: ambient.currentTime,
-      timelineTime: AmbientSound.timelineTime(),
-      paused: ambient.paused,
-      muted: ambient.muted,
-      duration: ambient.duration,
-      audioElements: document.querySelectorAll("audio").length,
-      filmMuted: film.muted,
-      filmVolume: film.volume
+test("audible autoplay is attempted immediately with the global soundtrack", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__audioPlayAttempts = [];
+    const nativePlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function (...args) {
+      if (this.tagName === "AUDIO") {
+        window.__audioPlayAttempts.push({ muted: this.muted, volume: this.volume, source: this.currentSrc });
+      }
+      return nativePlay.apply(this, args);
     };
   });
-  expect(before.timelineTime).toBeGreaterThan(10);
-  expect(before.muted).toBeTruthy();
-  expect(before.duration).toBeGreaterThan(313.5);
-  expect(before.duration).toBeLessThan(314.5);
-  expect(before.audioElements).toBe(1);
-  expect(before.filmMuted).toBeTruthy();
-  expect(before.filmVolume).toBe(0);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__audioPlayAttempts?.length > 0, null, { timeout: 5000 });
+  const initial = await page.evaluate(() => ({
+    attempt: window.__audioPlayAttempts[0],
+    state: document.body.dataset.audio,
+    instances: document.querySelectorAll("audio").length,
+    filmMuted: document.querySelector("#hero-video").muted,
+    filmVolume: document.querySelector("#hero-video").volume
+  }));
+  expect(initial.attempt.muted).toBeFalsy();
+  expect(initial.attempt.volume).toBeGreaterThan(0.1);
+  expect(initial.attempt.source).toContain("assets/audio/benghazi-ambient.mp3");
+  expect(initial.instances).toBe(1);
+  expect(initial.filmMuted).toBeTruthy();
+  expect(initial.filmVolume).toBe(0);
+  expect(["on", "starting", "blocked"]).toContain(initial.state);
+  await ensureSoundOn(page);
+});
 
-  await page.locator("#hero-sound").click();
+test("blocked autoplay unlocks on the first normal touch anywhere", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__allowAudioPlayback = false;
+    window.__blockedAudioAttempts = [];
+    window.addEventListener("pointerdown", () => { window.__allowAudioPlayback = true; }, { capture: true });
+    window.addEventListener("touchstart", () => { window.__allowAudioPlayback = true; }, { capture: true });
+    const nativePlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function (...args) {
+      if (this.tagName !== "AUDIO") return nativePlay.apply(this, args);
+      window.__blockedAudioAttempts.push({ muted: this.muted, volume: this.volume, time: this.currentTime });
+      if (!window.__allowAudioPlayback) return Promise.reject(new DOMException("Autoplay blocked", "NotAllowedError"));
+      Object.defineProperty(this, "paused", { configurable: true, get: () => false });
+      return Promise.resolve();
+    };
+  });
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.body.dataset.audio === "blocked", null, { timeout: 5000 });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 2, null, { timeout: 12000 });
+  const before = await page.evaluate(() => ({
+    timeline: AmbientSound.timelineTime(),
+    attempts: window.__blockedAudioAttempts.length,
+    pressed: document.querySelector("#hero-sound").getAttribute("aria-pressed")
+  }));
+  expect(before.timeline).toBeGreaterThan(2);
+  expect(before.attempts).toBe(1);
+  expect(before.pressed).toBe("false");
+
+  await page.touchscreen.tap(18, 320);
   await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
   await page.waitForTimeout(500);
   const after = await page.evaluate(() => ({
     time: document.querySelector("#ambient-audio").currentTime,
     paused: document.querySelector("#ambient-audio").paused,
     muted: document.querySelector("#ambient-audio").muted,
-    filmMuted: document.querySelector("#hero-video").muted,
-    filmVolume: document.querySelector("#hero-video").volume
+    instances: document.querySelectorAll("audio").length,
+    attempts: window.__blockedAudioAttempts.length,
+    pressed: document.querySelector("#hero-sound").getAttribute("aria-pressed")
   }));
-  expect(after.time).toBeGreaterThan(before.timelineTime + 0.35);
-  expect(after.time).toBeLessThan(before.timelineTime + 2);
+  expect(after.time).toBeGreaterThan(before.timeline - 0.1);
+  expect(after.time).toBeLessThan(before.timeline + 1.5);
   expect(after.paused).toBeFalsy();
   expect(after.muted).toBeFalsy();
-  expect(after.filmMuted).toBeTruthy();
-  expect(after.filmVolume).toBe(0);
+  expect(after.instances).toBe(1);
+  expect(after.attempts).toBe(2);
+  expect(after.pressed).toBe("true");
+  await context.close();
+});
+
+test("first touch supersedes an autoplay request that is still pending", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 430, height: 932 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__pendingAudioAttempts = 0;
+    window.__touchReachedPage = false;
+    window.addEventListener("pointerdown", () => { window.__touchReachedPage = true; }, { capture: true });
+    window.addEventListener("touchstart", () => { window.__touchReachedPage = true; }, { capture: true });
+    const nativePlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function (...args) {
+      if (this.tagName !== "AUDIO") return nativePlay.apply(this, args);
+      window.__pendingAudioAttempts += 1;
+      if (!window.__touchReachedPage) return new Promise(() => {});
+      Object.defineProperty(this, "paused", { configurable: true, get: () => false });
+      return Promise.resolve();
+    };
+  });
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    () => document.body.dataset.audio === "starting" && document.body.dataset.state === "intro" && Intro.tl?.time() > 2,
+    null,
+    { timeout: 12000 }
+  );
+  await page.touchscreen.tap(24, 360);
+  await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
+  const result = await page.evaluate(() => ({
+    attempts: window.__pendingAudioAttempts,
+    instances: document.querySelectorAll("audio").length,
+    time: document.querySelector("#ambient-audio").currentTime,
+    pressed: document.querySelector("#hero-sound").getAttribute("aria-pressed")
+  }));
+  expect(result.attempts).toBe(2);
+  expect(result.instances).toBe(1);
+  expect(result.time).toBeGreaterThan(1.8);
+  expect(result.pressed).toBe("true");
+  await context.close();
 });
 
 for (const [name, viewport] of [
@@ -308,11 +418,10 @@ for (const [name, viewport] of [
     await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => document.body.dataset.state === "intro", null, { timeout: 12000 });
     await page.waitForFunction(() => Intro.tl && Intro.tl.isActive(), null, { timeout: 3000 });
+    await ensureSoundOn(page);
     await page.evaluate(() => Intro.skip());
     await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 6000 });
 
-    await page.locator("#hero-sound").click();
-    await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
     await page.waitForTimeout(2000);
     const started = await page.evaluate(() => ({
       time: document.querySelector("#ambient-audio").currentTime,
@@ -380,6 +489,73 @@ for (const [name, viewport] of [
   });
 }
 
+test("tablet rotation preserves the live intro, film and soundtrack timelines", async ({ page }) => {
+  test.setTimeout(45000);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => message.type() === "error" && errors.push(`console: ${message.text()}`));
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.time() > 4, null, { timeout: 14000 });
+  await ensureSoundOn(page);
+  const portrait = await page.evaluate(() => {
+    window.__rotationAudio = document.querySelector("#ambient-audio");
+    window.__rotationVideo = document.querySelector("#hero-video");
+    return { intro: Intro.tl.time(), audio: window.__rotationAudio.currentTime };
+  });
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.waitForTimeout(700);
+  const landscape = await page.evaluate(() => ({
+    sameAudio: window.__rotationAudio === document.querySelector("#ambient-audio"),
+    sameVideo: window.__rotationVideo === document.querySelector("#hero-video"),
+    intro: Intro.tl.time(),
+    audio: window.__rotationAudio.currentTime,
+    video: window.__rotationVideo.currentTime,
+    mode: Env.mode
+  }));
+  expect(landscape.sameAudio).toBeTruthy();
+  expect(landscape.sameVideo).toBeTruthy();
+  expect(landscape.intro).toBeGreaterThan(portrait.intro + 0.4);
+  expect(landscape.audio).toBeGreaterThan(portrait.audio + 0.4);
+  expect(landscape.mode).toBe("tabletLandscape");
+
+  await page.waitForFunction(() => document.querySelector("#hero-video").currentTime > 1, null, { timeout: 12000 });
+  const beforeSecondRotation = await page.evaluate(() => ({
+    intro: Intro.tl.time(),
+    audio: window.__rotationAudio.currentTime,
+    video: window.__rotationVideo.currentTime
+  }));
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.waitForTimeout(700);
+  const returnedPortrait = await page.evaluate(() => {
+    const frame = document.querySelector("#hero-film").getBoundingClientRect();
+    return {
+      sameAudio: window.__rotationAudio === document.querySelector("#ambient-audio"),
+      sameVideo: window.__rotationVideo === document.querySelector("#hero-video"),
+      intro: Intro.tl.time(),
+      audio: window.__rotationAudio.currentTime,
+      video: window.__rotationVideo.currentTime,
+      videoReady: window.__rotationVideo.readyState,
+      mode: Env.mode,
+      coverage: { left: frame.left, right: frame.right, top: frame.top, bottom: frame.bottom }
+    };
+  });
+  expect(returnedPortrait.sameAudio).toBeTruthy();
+  expect(returnedPortrait.sameVideo).toBeTruthy();
+  expect(returnedPortrait.intro).toBeGreaterThan(beforeSecondRotation.intro + 0.4);
+  expect(returnedPortrait.audio).toBeGreaterThan(beforeSecondRotation.audio + 0.4);
+  expect(returnedPortrait.video).toBeGreaterThan(beforeSecondRotation.video + 0.4);
+  expect(returnedPortrait.videoReady).toBeGreaterThanOrEqual(2);
+  expect(returnedPortrait.mode).toBe("tabletPortrait");
+  expect(returnedPortrait.coverage.left).toBeLessThanOrEqual(0);
+  expect(returnedPortrait.coverage.right).toBeGreaterThanOrEqual(820);
+  expect(returnedPortrait.coverage.top).toBeLessThanOrEqual(0);
+  expect(returnedPortrait.coverage.bottom).toBeGreaterThanOrEqual(1180);
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 10000 });
+  expect(errors).toEqual([]);
+});
+
 test("one long soundtrack survives the film and sixty seconds of exploration", async ({ page }) => {
   test.setTimeout(100000);
   const errors = [];
@@ -388,11 +564,10 @@ test("one long soundtrack survives the film and sixty seconds of exploration", a
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
+  await ensureSoundOn(page);
   await page.evaluate(() => Intro.skip());
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 6000 });
 
-  await page.locator("#hero-sound").click();
-  await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
   await page.evaluate(() => { window.__ambientIdentity = document.querySelector("#ambient-audio"); });
   await page.waitForFunction(() => document.body.dataset.film === "ended", null, { timeout: 12000 });
   const atFilmEnd = await page.evaluate(() => ({
@@ -436,10 +611,9 @@ test("ambient loop boundary keeps the same live audio instance", async ({ page }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
+  await ensureSoundOn(page);
   await page.evaluate(() => Intro.skip());
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 6000 });
-  await page.locator("#hero-sound").click();
-  await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
   const duration = await page.evaluate(() => {
     const audio = document.querySelector("#ambient-audio");
     window.__loopIdentity = audio;

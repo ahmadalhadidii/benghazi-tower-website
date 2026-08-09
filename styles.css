@@ -300,7 +300,6 @@ html[data-viewport="tabletLandscape"] .cloud--near,
 html[data-viewport="tabletPortrait"] .cloud--near,
 html[data-viewport="mobile"] .cloud--near,
 html[data-intro-mode="tabletLite"] .cloud--near,
-html[data-intro-mode="lite"] .cloud--far,
 html[data-intro-mode="lite"] .cloud--near {
   display: none;
 }
@@ -311,10 +310,18 @@ html[data-viewport="mobile"] .cloud--mid {
   filter: blur(14px) saturate(0.56) contrast(0.78) brightness(1.04);
 }
 
-/* High-pixel portrait tablets: one-plate fallback */
+html[data-viewport="tabletPortrait"] .cloud--far,
+html[data-viewport="mobile"] .cloud--far {
+  background-position: center, 12% 30%;
+}
+
+html[data-viewport="tabletPortrait"] .cloud--mid,
+html[data-viewport="mobile"] .cloud--mid {
+  background-position: center, 16% 56%;
+}
+
+/* High-pixel portrait tablets retain both narrative depth planes. */
 @media (min-width: 801px) and (max-width: 900px) and (min-height: 1100px) {
-  .cloud--far,
-  .cloud--near,
   .hero-mist--coast {
     display: none;
   }
