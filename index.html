@@ -112,69 +112,6 @@
 <audio id="ambient-audio" preload="auto" loop playsinline aria-hidden="true">
   <source src="assets/audio/benghazi-ambient.mp3?v=20260809-cinematic7" type="audio/mpeg">
 </audio>
-<script>
-(() => {
-  const audio = document.getElementById("ambient-audio");
-  if (!audio) return;
-  const events = ["pointerdown", "touchstart", "click", "keydown"];
-  const state = {
-    audio,
-    startedAt: performance.now(),
-    started: false,
-    attempted: false,
-    lastResult: null,
-    promise: null,
-    handler: null,
-    remove() {
-      if (!this.handler) return;
-      events.forEach((type) => document.removeEventListener(type, this.handler, true));
-      this.handler = null;
-    },
-    attempt() {
-      state.attempted = true;
-      audio.muted = false;
-      audio.volume = 0.15;
-      const elapsed = Math.max(0, (performance.now() - state.startedAt) / 1000);
-      if (!state.started && audio.paused && Number.isFinite(audio.duration) && audio.duration > 0 && elapsed > 0.35) {
-        audio.currentTime = elapsed % audio.duration;
-      }
-      let request;
-      try {
-        request = audio.play();
-      } catch (error) {
-        return Promise.resolve(false);
-      }
-      const pending = Promise.resolve(request)
-        .then(() => {
-          state.started = true;
-          state.lastResult = true;
-          state.remove();
-          document.dispatchEvent(new CustomEvent("benghazi:ambient-ready"));
-          return true;
-        })
-        .catch(() => {
-          state.lastResult = false;
-          return false;
-        })
-        .finally(() => {
-          if (state.promise === pending) state.promise = null;
-        });
-      state.promise = pending;
-      return pending;
-    }
-  };
-  state.handler = () => {
-    if (!state.started) state.attempt();
-  };
-  events.forEach((type) => document.addEventListener(type, state.handler, {
-    capture: true,
-    passive: type !== "keydown"
-  }));
-  document.body.dataset.audio = "starting";
-  window.__benghaziAmbientBoot = state;
-  state.attempt();
-})();
-</script>
 
 <!-- ── Interface ─────────────────────────────────────────────────────────── -->
 <div class="hud">
@@ -185,9 +122,14 @@
     <span class="hud__menu-glyph" aria-hidden="true"><i></i><i></i></span>
   </button>
 
-  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Mute ambient sound" aria-pressed="true">
+  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Turn ambient sound on" aria-pressed="false">
     <span class="hud__sound-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span>Sound on</span>
+    <span>Sound off</span>
+  </button>
+
+  <button class="hud__home u-label" id="hud-home" type="button" aria-label="Return to Benghazi Tower arrival">
+    <span class="hud__home-mark" aria-hidden="true"></span>
+    <span>Home</span>
   </button>
 
   <button class="hud__cue u-label" id="hud-cue" type="button" aria-label="Navigate to next scene">

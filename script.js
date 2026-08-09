@@ -418,6 +418,7 @@ Env.sync();
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+const wrapIndex = (index, count) => ((index % count) + count) % count;
 const body = document.body;
 
 if (experienceConfig.debugMode) body.dataset.debug = "true";
@@ -569,120 +570,79 @@ const Loader = {
    -------------------------------------------------------------------------- */
 
 const AmbientSound = {
-  el:          $("#ambient-audio"),
-  button:      $("#hero-sound"),
-  enabled:     false,
-  bound:       false,
-  starting:    false,
-  startingAutoplay: false,
-  stage:       "intro",
-  sceneIndex:  0,
-  menuDucked:  false,
-  playPromise: null,
-  startAttempt: 0,
-  timelineStartedAt: 0,
+  el:             $("#ambient-audio"),
+  button:         $("#hero-sound"),
+  enabled:        false,
+  unlocked:       false,
+  userWantsSound: true,
+  bound:          false,
+  starting:       false,
+  startingFromInteraction: false,
+  stage:          "intro",
+  sceneIndex:     0,
+  menuDucked:     false,
+  startAttempt:   0,
+  timelineStartedAt: performance.now(),
   hasStartedPlayback: false,
-  unlockConsumed: false,
-  _firstPointer: null,
-  _firstTouch: null,
-  _firstClick: null,
-  _firstWheel: null,
-  _firstKey: null,
+  unlockEvents:   [],
+  _firstInteraction: null,
 
   init() {
     if (this.bound || !this.el) return;
-    const earlyBoot = window.__benghaziAmbientBoot;
     this.bound = true;
     this.el.loop = true;
     this.el.muted = false;
     this.el.volume = this.targetGain();
-    this.timelineStartedAt = earlyBoot?.startedAt || performance.now();
     body.dataset.audio = "starting";
     this.updateButton();
 
-    this.button?.addEventListener("click", (event) => {
+    this.button?.addEventListener("click", async (event) => {
+      event.preventDefault();
       event.stopPropagation();
-      if (this.enabled) this.disable();
-      else this.startFromInteraction();
+      if (this.isActuallyPlaying()) this.disable();
+      else await this.enable({ fromInteraction: true });
     });
 
-    const firstInteraction = (event) => {
+    this._firstInteraction = (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest("#hero-sound")) return;
-      if (this.unlockConsumed || this.enabled) return;
-      this.startFromInteraction();
+      if (!this.userWantsSound || this.isActuallyPlaying()) return;
+      if (this.starting && this.startingFromInteraction) return;
+      this.enable({ fromInteraction: true });
     };
-    this._firstPointer = firstInteraction;
-    this._firstTouch = firstInteraction;
-    this._firstClick = firstInteraction;
-    this._firstWheel = firstInteraction;
-    this._firstKey = firstInteraction;
-    document.addEventListener("pointerdown", this._firstPointer, { capture: true, passive: true });
-    document.addEventListener("touchstart", this._firstTouch, { capture: true, passive: true });
-    document.addEventListener("click", this._firstClick, { capture: true, passive: true });
-    document.addEventListener("wheel", this._firstWheel, { capture: true, passive: true });
-    document.addEventListener("keydown", this._firstKey, { capture: true });
-    this.el.addEventListener("ended", () => this.ensurePlaying());
-    if (earlyBoot?.promise) {
-      this.playPromise = earlyBoot.promise;
-      this.enable({ autoplay: true });
-    } else if (earlyBoot?.started || !this.el.paused) {
-      this.enable({ autoplay: true });
-    } else if (earlyBoot?.attempted && earlyBoot.lastResult === false) {
-      body.dataset.audio = "blocked";
-      this.updateButton();
-    } else {
-      this.enable({ autoplay: true });
-    }
+    this.unlockEvents = window.PointerEvent
+      ? ["pointerdown", "click", "keydown"]
+      : ["touchstart", "mousedown", "click", "keydown"];
+    this.unlockEvents.forEach((type) => document.addEventListener(type, this._firstInteraction, {
+      capture: true,
+      passive: type !== "keydown"
+    }));
+
+    ["play", "playing", "pause", "volumechange", "ended"].forEach((type) => {
+      this.el.addEventListener(type, () => this.syncFromMedia(type));
+    });
+
+    /* Make one best-effort audible attempt. A real interaction retries it. */
+    this.enable({ autoplay: true });
   },
 
-  startFromInteraction() {
-    if (!this.el || this.enabled || this.unlockConsumed) return;
-    if (this.starting) {
-      if (!this.startingAutoplay) return;
-      this.starting = false;
-      this.startingAutoplay = false;
-      this.playPromise = null;
-    }
-    this.enable();
+  isActuallyPlaying() {
+    return !!this.el && !this.el.paused && !this.el.ended && !this.el.muted && this.el.volume > 0;
   },
 
-  removeUnlockListeners() {
-    if (this._firstPointer) document.removeEventListener("pointerdown", this._firstPointer, true);
-    if (this._firstTouch) document.removeEventListener("touchstart", this._firstTouch, true);
-    if (this._firstClick) document.removeEventListener("click", this._firstClick, true);
-    if (this._firstWheel) document.removeEventListener("wheel", this._firstWheel, true);
-    if (this._firstKey) document.removeEventListener("keydown", this._firstKey, true);
-    this._firstPointer = null;
-    this._firstTouch = null;
-    this._firstClick = null;
-    this._firstWheel = null;
-    this._firstKey = null;
-    window.__benghaziAmbientBoot?.remove?.();
-  },
-
-  ensurePlaying() {
-    if (!this.el) return Promise.resolve(false);
-    if (!this.el.paused) {
+  syncFromMedia(type) {
+    if (!this.el) return;
+    const playing = this.isActuallyPlaying();
+    if (playing) {
+      this.enabled = true;
+      this.unlocked = true;
       this.hasStartedPlayback = true;
-      return Promise.resolve(true);
+      this.starting = false;
+      this.startingFromInteraction = false;
+    } else if (type === "pause" || type === "ended" || this.el.muted) {
+      this.enabled = false;
     }
-    if (this.playPromise) return this.playPromise;
-    const request = this.el.play();
-    if (!request || typeof request.then !== "function") {
-      return Promise.resolve(!this.el.paused);
-    }
-    const pending = request
-      .then(() => {
-        this.hasStartedPlayback = true;
-        return true;
-      })
-      .catch(() => false)
-      .finally(() => {
-        if (this.playPromise === pending) this.playPromise = null;
-      });
-    this.playPromise = pending;
-    return pending;
+    this.updateButton();
   },
 
   alignInitialTimeline() {
@@ -699,27 +659,42 @@ const AmbientSound = {
     return Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
   },
 
-  async enable({ autoplay = false } = {}) {
-    if (!this.el || this.enabled || this.starting) return;
+  async enable({ autoplay = false, fromInteraction = false } = {}) {
+    if (!this.el) return false;
+    if (this.isActuallyPlaying()) {
+      this.enabled = true;
+      this.updateButton();
+      return true;
+    }
+    this.userWantsSound = true;
     const attempt = ++this.startAttempt;
     this.starting = true;
-    this.startingAutoplay = autoplay;
+    this.startingFromInteraction = fromInteraction;
     body.dataset.audio = "starting";
     this.updateButton();
 
     const alignOnStart = !this.hasStartedPlayback && this.el.paused;
     this.alignInitialTimeline();
     this.el.muted = false;
-    if (autoplay) this.el.volume = this.targetGain();
-    const didPlay = await this.ensurePlaying();
-    if (attempt !== this.startAttempt) return;
-    if (didPlay === false || this.el.paused) {
+    this.el.volume = this.targetGain();
+
+    let didPlay = false;
+    try {
+      const request = this.el.play();
+      if (request && typeof request.then === "function") await request;
+      didPlay = !this.el.paused;
+    } catch (error) {
+      didPlay = false;
+    }
+
+    if (attempt !== this.startAttempt) return false;
+    if (!didPlay || this.el.paused) {
       this.enabled = false;
       this.starting = false;
-      this.startingAutoplay = false;
+      this.startingFromInteraction = false;
       body.dataset.audio = "blocked";
       this.updateButton();
-      return;
+      return false;
     }
     if (alignOnStart && Number.isFinite(this.el.duration) && this.el.duration > 0) {
       const elapsed = Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
@@ -727,24 +702,26 @@ const AmbientSound = {
     }
 
     this.enabled = true;
+    this.unlocked = this.unlocked || fromInteraction || !autoplay;
     this.starting = false;
-    this.startingAutoplay = false;
-    this.unlockConsumed = true;
-    this.removeUnlockListeners();
+    this.startingFromInteraction = false;
+    this.hasStartedPlayback = true;
     body.dataset.audio = "on";
-    if (!autoplay || this.el.volume < this.targetGain() * 0.8) {
-      this.fadeTo(this.targetGain(), 1.35);
-    }
     this.updateButton();
+    return true;
   },
 
   disable() {
-    if (!this.enabled) return;
+    if (!this.el) return;
+    this.userWantsSound = false;
+    this.startAttempt += 1;
     this.enabled = false;
     this.starting = false;
-    this.startingAutoplay = false;
+    this.startingFromInteraction = false;
+    if (window.gsap) gsap.killTweensOf(this.el);
+    this.el.muted = true;
+    this.el.pause();
     body.dataset.audio = "muted";
-    this.fadeTo(0, 1);
     this.updateButton();
   },
 
@@ -780,21 +757,22 @@ const AmbientSound = {
   },
 
   recoverFromBrowserInterruption() {
-    if (!this.hasStartedPlayback && !this.enabled) {
-      this.enable({ autoplay: true });
-    } else if (this.el?.paused) {
-      this.ensurePlaying();
-    }
+    if (!this.el || !this.userWantsSound) return;
+    if (this.el.paused || this.el.muted) this.enable({ autoplay: true });
+    else this.syncFromMedia("playing");
   },
 
   updateButton() {
     if (!this.button) return;
-    const intendedOn = this.enabled || this.starting || body.dataset.audio === "starting";
+    const actuallyOn = this.isActuallyPlaying();
+    this.enabled = actuallyOn;
+    if (actuallyOn) body.dataset.audio = "on";
+    else if (!this.starting && body.dataset.audio !== "blocked") body.dataset.audio = "muted";
     this.button.hidden = false;
-    this.button.setAttribute("aria-pressed", String(intendedOn));
-    this.button.setAttribute("aria-label", intendedOn ? "Mute ambient sound" : "Unmute ambient sound");
+    this.button.setAttribute("aria-pressed", String(actuallyOn));
+    this.button.setAttribute("aria-label", actuallyOn ? "Turn ambient sound off" : "Turn ambient sound on");
     const label = $("span:last-child", this.button);
-    if (label) label.textContent = intendedOn ? "Sound on" : "Sound";
+    if (label) label.textContent = actuallyOn ? "Sound on" : "Sound off";
   }
 };
 
@@ -1401,7 +1379,7 @@ const ProposalState = {
   },
 
   activate(index) {
-    this.current = Math.max(0, Math.min(proposalConfigs.length - 1, index));
+    this.current = wrapIndex(index, proposalConfigs.length);
     experienceConfig.scenes = this.active.scenes;
     body.dataset.proposal = this.active.id;
     body.dataset.main = "true";
@@ -1635,10 +1613,18 @@ const SceneDeck = {
   loadAround(index) {
     const keep  = new Set();
     const first = ProposalState.current === 0 ? 1 : 0;
-    const start = body.dataset.state === "ready" ? Math.max(first, index - 1) : first;
-    for (let i = start; i <= Math.min(this.layers.length - 1, index + 1); i++) {
-      keep.add(i);
-      this.load(i);
+    if (body.dataset.state === "ready") {
+      const count = this.layers.length;
+      [index, wrapIndex(index - 1, count), wrapIndex(index + 1, count)].forEach((i) => {
+        if (i < first) return;
+        keep.add(i);
+        this.load(i);
+      });
+    } else {
+      for (let i = first; i <= Math.min(this.layers.length - 1, index + 1); i++) {
+        keep.add(i);
+        this.load(i);
+      }
     }
     if (body.dataset.state !== "ready") return;
     [...this.loaded].forEach((li) => {
@@ -1666,7 +1652,7 @@ const SceneDeck = {
   },
 
   setActive(index) {
-    const next = Math.max(0, Math.min(index, this.layers.length - 1));
+    const next = wrapIndex(index, this.layers.length);
     if (next === this.current) { this.loadAround(next); return; }
     this.layers.forEach((layer, i) => layer.setAttribute("aria-hidden", i === next ? "false" : "true"));
     this.current = next;
@@ -1694,6 +1680,9 @@ const SceneDeck = {
 
 const ProposalNavigation = {
   isTransitioning: false,
+  timeline: null,
+  transitionResolve: null,
+  transitionId: 0,
   pointerActive: false,
   pointerId: null,
   pointerStartX: 0,
@@ -1752,23 +1741,25 @@ const ProposalNavigation = {
 
   go(direction) {
     if (!this.canUse()) return false;
-    const target = ProposalState.current + direction;
-    if (target < 0 || target >= proposalConfigs.length) {
-      this.resistance(direction);
-      return false;
-    }
+    const target = wrapIndex(ProposalState.current + direction, proposalConfigs.length);
     this.switchTo(target, direction);
     return true;
   },
 
   async switchTo(target, direction = Math.sign(target - ProposalState.current) || 1) {
     if (!this.canUse() || target === ProposalState.current) return false;
+    const transitionId = ++this.transitionId;
     this.isTransitioning = true;
     body.dataset.proposalDragging = "false";
 
     await ProposalState.prefetchMain(target);
+    if (transitionId !== this.transitionId || !this.isTransitioning) return false;
     const outgoing = SceneDeck.layers[0];
     const incoming = await SceneDeck.prepareMainLayer(target);
+    if (transitionId !== this.transitionId || !this.isTransitioning) {
+      if (incoming && incoming !== $(".cinema-layer--hero")) incoming.remove();
+      return false;
+    }
     if (!outgoing || !incoming) {
       this.isTransitioning = false;
       return false;
@@ -1783,8 +1774,16 @@ const ProposalNavigation = {
     incoming.setAttribute("aria-hidden", "false");
     outgoing.setAttribute("aria-hidden", "true");
 
-    await new Promise((resolve) => {
-      const tl = gsap.timeline({ onComplete: resolve });
+    const completed = await new Promise((resolve) => {
+      this.transitionResolve = resolve;
+      const tl = gsap.timeline({
+        onComplete: () => {
+          this.timeline = null;
+          this.transitionResolve = null;
+          resolve(true);
+        }
+      });
+      this.timeline = tl;
       tl.to(heroType, { autoAlpha: 0, y: direction > 0 ? -6 : 6, duration: duration * 0.23, ease: "power1.in" }, 0)
         .to(outgoing, {
           autoAlpha: 0, x: -direction * distance, scale: Env.reducedMotion ? 1 : 0.996,
@@ -1797,6 +1796,7 @@ const ProposalNavigation = {
           autoAlpha: 1, y: 0, duration: duration * 0.34, ease: "power2.out"
         }, duration * 0.6);
     });
+    if (!completed) return false;
 
     ProposalState.activate(target);
     SceneDeck.render({ adoptMain: target === 0 ? null : incoming });
@@ -1809,6 +1809,22 @@ const ProposalNavigation = {
 
     if (target === 1 && ProposalState.canPrefetchThird()) ProposalState.prefetchMain(2);
     return true;
+  },
+
+  cancelTransition() {
+    this.transitionId += 1;
+    if (this.timeline) this.timeline.kill();
+    this.timeline = null;
+    if (this.transitionResolve) this.transitionResolve(false);
+    this.transitionResolve = null;
+    this.isTransitioning = false;
+    this.pointerActive = false;
+    this.pointerId = null;
+    this.pointerDX = 0;
+    this.pointerDY = 0;
+    this.wheelX = 0;
+    clearTimeout(this.wheelTimer);
+    body.dataset.proposalDragging = "false";
   },
 
   preview(dx) {
@@ -1905,6 +1921,7 @@ const SceneNavigation = {
   touchStartX:      0,
   touchStartY:      0,
   touchActive:      false,
+  homeInProgress:   false,
   _safetyTimer:     null,
   handlers:         {},
 
@@ -1970,14 +1987,26 @@ const SceneNavigation = {
     gsap.set($(".hero-edge"), { opacity:   activeIndex === 0 ? 1 : 0 });
   },
 
-  goToScene(nextIndex, direction = Math.sign(nextIndex - this.currentScene) || 1, { skipChapter = false } = {}) {
+  goToScene(nextIndex, direction = Math.sign(nextIndex - this.currentScene) || 1, { skipChapter = false, prepared = false } = {}) {
     const lastIndex = experienceConfig.scenes.length - 1;
-    const target    = Math.max(0, Math.min(lastIndex, nextIndex));
+    const target    = wrapIndex(nextIndex, lastIndex + 1);
     if (this.isTransitioning) return false;
     if (target === this.currentScene) return false;
     if (body.dataset.state !== "ready") return false;
     if ($("#menu")?.dataset.open === "true") return false;
     if (ProposalNavigation.isTransitioning) return false;
+
+    const targetLoad = SceneDeck.load(target);
+    const targetImage = $("img", SceneDeck.layers[target]);
+    if (!prepared && targetImage && !targetImage.complete) {
+      this.isTransitioning = true;
+      this.dismissCue();
+      Promise.resolve(targetLoad).finally(() => {
+        this.isTransitioning = false;
+        this.goToScene(target, direction, { skipChapter, prepared: true });
+      });
+      return true;
+    }
 
     const chapter = experienceConfig.scenes[target]?.chapter;
     if (chapter && direction > 0 && !skipChapter) {
@@ -1985,7 +2014,7 @@ const SceneNavigation = {
       this.dismissCue();
       ChapterTransition.play(chapter).finally(() => {
         this.isTransitioning = false;
-        this.goToScene(target, direction, { skipChapter: true });
+        this.goToScene(target, direction, { skipChapter: true, prepared: true });
       });
       return true;
     }
@@ -1994,7 +2023,6 @@ const SceneNavigation = {
     this.dismissCue();
     this.stopAmbient();
     AmbientSound.setScene(target);
-    SceneDeck.load(target);
 
     /* Safety: if transition never completes, force-unlock after 2× duration + 800ms */
     const safetyMs = this.transitionDuration() * 2000 + 800;
@@ -2120,6 +2148,78 @@ const SceneNavigation = {
 
   navigate(direction) {
     return this.goToScene(this.currentScene + direction, direction);
+  },
+
+  cancelTransition() {
+    if (this.timeline) this.timeline.kill();
+    clearTimeout(this._safetyTimer);
+    clearTimeout(this.wheelReleaseTimer);
+    this.timeline = null;
+    this.isTransitioning = false;
+    this.touchActive = false;
+    this.wheelAccumulator = 0;
+    this.wheelDirection = 0;
+    this.wheelReady = true;
+    this.stopAmbient();
+  },
+
+  goHome() {
+    if (body.dataset.state !== "ready") return false;
+    if (this.homeInProgress) return false;
+    if ($("#menu")?.dataset.open === "true") Interface.hide(false);
+
+    this.cancelTransition();
+    ProposalNavigation.cancelTransition();
+    this.setRestState(this.currentScene);
+
+    if (ProposalState.current === 0 && this.currentScene === 0) {
+      AmbientSound.setScene(0);
+      this.updateHUD(0);
+      return true;
+    }
+
+    const outgoing = SceneDeck.layers[this.currentScene];
+    const hero = $(".cinema-layer--hero");
+    const heroType = $(".hero-type");
+    const heroEdge = $(".hero-edge");
+    const duration = Env.reducedMotion ? 0.28 : 0.66;
+
+    this.homeInProgress = true;
+    this.isTransitioning = true;
+    ProposalState.activate(0);
+    AmbientSound.setScene(0);
+    hero?.setAttribute("aria-hidden", "false");
+    gsap.set(hero, { autoAlpha: 1, x: 0, scale: 1, zIndex: 4 });
+    gsap.set(heroType, { autoAlpha: 0, y: 7 });
+    gsap.set(heroEdge, { opacity: 0 });
+
+    const finish = () => {
+      SceneDeck.render();
+      this.currentScene = 0;
+      this.isTransitioning = false;
+      this.homeInProgress = false;
+      this.timeline = null;
+      this.setRestState(0);
+      this.updateHUD(0);
+      this.startAmbient(0);
+      Interface.buildMenu();
+
+      const cue = $("#hud-cue");
+      this.cueDismissed = false;
+      if (cue) {
+        cue.classList.remove("is-dismissed");
+        gsap.to(cue, { autoAlpha: 1, duration: 0.35, ease: "power1.out" });
+      }
+    };
+
+    const tl = gsap.timeline({ onComplete: finish });
+    if (outgoing && outgoing !== hero) {
+      tl.to(outgoing, { autoAlpha: 0, scale: Env.reducedMotion ? 1 : 1.008, duration: duration * 0.58, ease: "power2.inOut" }, 0);
+    }
+    tl.to(heroType, { autoAlpha: 1, y: 0, duration: duration * 0.48, ease: "power2.out" }, duration * 0.38)
+      .to(heroEdge, { opacity: 1, duration: duration * 0.42, ease: "power1.out" }, duration * 0.36);
+    this.timeline = tl;
+    return true;
   },
 
   updateHUD(index) {
@@ -2425,7 +2525,9 @@ const Interface = {
     });
 
     const cue = $("#hud-cue");
-    if (cue) cue.addEventListener("click", () => SceneNavigation.goToScene(1));
+    if (cue) cue.addEventListener("click", () => SceneNavigation.navigate(1));
+    const home = $("#hud-home");
+    if (home) home.addEventListener("click", () => SceneNavigation.goHome());
   },
 
   open() {
