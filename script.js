@@ -5,11 +5,11 @@
      1.  experienceConfig      — curated 9-scene configuration
      2.  Env                   — viewport detection
      3.  Loader                — real progress; asks for the render if absent
-     4.  Atmosphere            — cloud plates and sky drift
-     5.  Intro                 — atmospheric descent (autoplay, once)
-     6.  SceneNavigation       — one gesture = one scene (desktop + touch)
-     7.  Interface             — HUD, menu, cue
-     8.  Boot
+     4.  GlobalAudio           — persistent ambience and master gain
+     5.  HeroFilm              — silent live-film handoff
+     6.  Atmosphere + Intro    — cloud depth and one-time descent
+     7.  SceneNavigation       — one gesture = one scene (desktop + touch)
+     8.  Interface + Boot      — HUD, menu, cue, startup
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -565,13 +565,201 @@ const Loader = {
 };
 
 /* --------------------------------------------------------------------------
-   4. Hero film — frame-zero handoff, audio fallback, portrait tracking
+   4. Global audio — one persistent soundtrack and master gain
+   -------------------------------------------------------------------------- */
+
+const GlobalAudio = {
+  el:          $("#ambient-audio"),
+  button:      $("#hero-sound"),
+  context:     null,
+  source:      null,
+  gain:        null,
+  enabled:     false,
+  started:     false,
+  bound:       false,
+  stage:       "intro",
+  sceneIndex:  0,
+  menuDucked:  false,
+  playPromise: null,
+  firstGestureUsed: false,
+  _firstPointer: null,
+  _firstKey: null,
+
+  init() {
+    if (this.bound || !this.el) return;
+    this.bound = true;
+    this.el.muted = true;
+    this.el.volume = 1;
+    body.dataset.audio = "muted";
+    this.updateButton();
+
+    this.button?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (this.enabled) this.disable();
+      else this.enable();
+    });
+
+    const firstInteraction = (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("#hero-sound")) return;
+      if (this.firstGestureUsed) return;
+      this.firstGestureUsed = true;
+      this.removeFirstGestureListeners();
+      this.enable();
+    };
+    this._firstPointer = firstInteraction;
+    this._firstKey = firstInteraction;
+    document.addEventListener("pointerdown", this._firstPointer, { capture: true, passive: true });
+    document.addEventListener("keydown", this._firstKey, { capture: true });
+
+    /* Advance the one global timeline silently whenever autoplay policy allows.
+       A rejected muted request is expected on some Safari versions. */
+    this.playOnce(true);
+  },
+
+  removeFirstGestureListeners() {
+    if (this._firstPointer) document.removeEventListener("pointerdown", this._firstPointer, true);
+    if (this._firstKey) document.removeEventListener("keydown", this._firstKey, true);
+    this._firstPointer = null;
+    this._firstKey = null;
+  },
+
+  ensureGraph() {
+    if (this.gain) return true;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return false;
+    try {
+      this.context = new AudioContextClass();
+      this.source = this.context.createMediaElementSource(this.el);
+      this.gain = this.context.createGain();
+      this.gain.gain.value = 0;
+      this.source.connect(this.gain);
+      this.gain.connect(this.context.destination);
+      return true;
+    } catch (error) {
+      this.context = null;
+      this.source = null;
+      this.gain = null;
+      return false;
+    }
+  },
+
+  playOnce(silent = false) {
+    if (!this.el || this.playPromise || (!this.el.paused && this.started)) return this.playPromise;
+    if (silent) this.el.muted = true;
+    const request = this.el.play();
+    if (!request || typeof request.then !== "function") {
+      this.started = !this.el.paused;
+      return Promise.resolve(this.started);
+    }
+    this.playPromise = request
+      .then(() => {
+        this.started = true;
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => { this.playPromise = null; });
+    return this.playPromise;
+  },
+
+  async enable() {
+    if (!this.el || this.enabled) return;
+    this.enabled = true;
+    body.dataset.audio = "starting";
+    this.updateButton();
+
+    const hasGraph = this.ensureGraph();
+    const resume = this.context?.state === "suspended"
+      ? this.context.resume().catch(() => {})
+      : Promise.resolve();
+    this.el.muted = false;
+    const played = this.el.paused ? this.playOnce(false) : Promise.resolve(true);
+    const [, didPlay] = await Promise.all([resume, played]);
+    if (didPlay === false || this.el.paused) {
+      this.enabled = false;
+      this.el.muted = true;
+      body.dataset.audio = "blocked";
+      this.updateButton();
+      return;
+    }
+
+    this.started = true;
+    body.dataset.audio = "on";
+    if (!hasGraph) this.el.volume = 0;
+    this.fadeTo(this.targetGain(), 1.15);
+    this.updateButton();
+  },
+
+  disable() {
+    if (!this.enabled) return;
+    this.enabled = false;
+    body.dataset.audio = "muted";
+    this.fadeTo(0, 1.05);
+    this.updateButton();
+  },
+
+  targetGain() {
+    if (this.menuDucked) return 0.18;
+    if (this.stage === "intro") return 0.23;
+    if (this.stage === "approach") return 0.32;
+    if (this.sceneIndex === 0) return 0.42;
+    if ([4, 7].includes(this.sceneIndex)) return 0.32;
+    return 0.27;
+  },
+
+  fadeTo(value, seconds = 1.1) {
+    if (!this.el) return;
+    if (this.gain && this.context) {
+      const now = this.context.currentTime;
+      const param = this.gain.gain;
+      param.cancelScheduledValues(now);
+      param.setValueAtTime(param.value, now);
+      param.linearRampToValueAtTime(value, now + seconds);
+      return;
+    }
+    if (window.gsap) gsap.to(this.el, { volume: value, duration: seconds, ease: "power1.inOut", overwrite: true });
+    else this.el.volume = value;
+  },
+
+  setStage(stage) {
+    this.stage = stage;
+    if (this.enabled) this.fadeTo(this.targetGain(), 1.35);
+  },
+
+  setScene(index) {
+    this.stage = "scene";
+    this.sceneIndex = index;
+    if (this.enabled) this.fadeTo(this.targetGain(), 1.25);
+  },
+
+  setMenu(open) {
+    this.menuDucked = open;
+    if (this.enabled) this.fadeTo(this.targetGain(), open ? 0.9 : 1.15);
+  },
+
+  setVisibility(hidden) {
+    if (!this.context || !this.enabled) return;
+    if (hidden && this.context.state === "running") this.context.suspend().catch(() => {});
+    if (!hidden && this.context.state === "suspended") this.context.resume().catch(() => {});
+  },
+
+  updateButton() {
+    if (!this.button) return;
+    this.button.hidden = false;
+    this.button.setAttribute("aria-pressed", String(this.enabled));
+    this.button.setAttribute("aria-label", this.enabled ? "Mute ambient sound" : "Enable ambient sound");
+    const label = $("span:last-child", this.button);
+    if (label) label.textContent = this.enabled ? "Sound on" : "Sound";
+  }
+};
+
+/* --------------------------------------------------------------------------
+   5. Hero film — silent frame-zero handoff and portrait tracking
    -------------------------------------------------------------------------- */
 
 const HeroFilm = {
   el:       $("#hero-video"),
   frame:    $("#hero-film"),
-  sound:    $("#hero-sound"),
   ready:    false,
   started:  false,
   ended:    false,
@@ -583,7 +771,6 @@ const HeroFilm = {
     if (this.bound || !this.el) return;
     this.bound = true;
     this.el.addEventListener("ended", () => this.settle());
-    this.sound?.addEventListener("click", () => this.toggleSound());
   },
 
   prepare(onProgress = () => {}) {
@@ -646,32 +833,12 @@ const HeroFilm = {
     gsap.set($(".hero-media"), { clearProps: "transform" });
     this.syncTracking(true);
     body.dataset.film = "playing";
-    gsap.to(this.el, { opacity: 1, duration: 0.08, ease: "none" });
-
-    /* Start the picture deterministically, then request the original soundtrack.
-       Browsers that disallow the unmute keep the film moving and expose a tiny control. */
-    this.el.muted = false;
-    setTimeout(() => {
-      if (!this.el || this.ended) return;
-      if (this.el.paused) {
-        this.el.muted = true;
-        this.el.play().catch(() => {});
-        body.dataset.filmAudio = "muted";
-        if (this.sound) this.sound.hidden = false;
-      } else {
-        body.dataset.filmAudio = "on";
-      }
-    }, 120);
-  },
-
-  toggleSound() {
-    if (!this.el || this.ended) return;
-    this.el.muted = !this.el.muted;
-    body.dataset.filmAudio = this.el.muted ? "muted" : "on";
-    if (!this.sound) return;
-    this.sound.setAttribute("aria-label", this.el.muted ? "Enable film sound" : "Mute film sound");
-    const label = $("span:last-child", this.sound);
-    if (label) label.textContent = this.el.muted ? "Sound" : "Sound on";
+    gsap.to(this.el, {
+      opacity: 1,
+      duration: Env.reducedMotion ? 0.28 : 1.55,
+      ease: "power1.inOut",
+      overwrite: true
+    });
   },
 
   syncTracking(animate = false) {
@@ -704,7 +871,6 @@ const HeroFilm = {
       this.el.pause();
       gsap.set(this.el, { opacity: this.started ? 1 : 0 });
     }
-    if (this.sound) this.sound.hidden = true;
     body.dataset.film = this.started ? "ended" : "static";
     if (body.dataset.state === "ready" && SceneNavigation.currentScene === 0) {
       Atmosphere.start(Loader.heroSrc);
@@ -722,7 +888,6 @@ const HeroFilm = {
       body.dataset.film = "ended";
       this.syncTracking(false);
     }
-    if (this.sound) this.sound.hidden = true;
   },
 
   pause() {
@@ -740,7 +905,7 @@ const HeroFilm = {
 };
 
 /* --------------------------------------------------------------------------
-   5. Atmosphere — final-frame coastal mist (paused after scene 0 exit)
+   6. Atmosphere — final-frame coastal mist (paused after scene 0 exit)
    -------------------------------------------------------------------------- */
 
 const Atmosphere = {
@@ -854,7 +1019,7 @@ const Atmosphere = {
 };
 
 /* --------------------------------------------------------------------------
-   5. Intro — one continuous atmospheric descent
+   7. Intro — one continuous atmospheric descent
    -------------------------------------------------------------------------- */
 
 const Intro = {
@@ -864,70 +1029,83 @@ const Intro = {
     const media = $(".hero-media");
     const stage = $(".hero-reveal");
     const haze  = $("#haze");
+    const far   = $(".cloud--far");
     const mid   = $(".cloud--mid");
     const near  = $(".cloud--near");
 
     body.dataset.state = "intro";
     performance.mark("benghazi-intro-start");
+    GlobalAudio.setStage("intro");
 
     gsap.set(stage, { opacity: 1 });
-    gsap.set(media, { scale: experienceConfig.descentStartScale, yPercent: 1.3 });
+    gsap.set(media, { scale: 1.024, xPercent: -0.25, yPercent: 1.6 });
     gsap.set($("#hero-video"), { opacity: 0 });
     HeroFilm.syncTracking(false);
 
     if (Env.introMode === "lite")    return this.buildReduced(media, haze);
-    if (Env.mobile)                  return this.buildMobile(media, stage, haze, mid);
-    if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, mid);
+    if (Env.mobile)                  return this.buildMobile(media, stage, haze, far, mid);
+    if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, far, mid);
 
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
 
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.4, scale: 1, xPercent: 0.5, yPercent: 0.2 })
-      .set(near, { opacity: 0.28, scale: 1, xPercent: -0.6, yPercent: -0.2 })
-      .to(haze,  { opacity: 0.95, duration: 0.55, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.7, duration: 0.55, ease: "power1.inOut" }, 0.55)
-      .to(haze,  { opacity: 0.18, duration: 1.1, ease: "power1.inOut" }, 1.1)
-      .to(haze,  { opacity: 0, duration: 0.88, ease: "power1.inOut" }, 2.2)
-      .to(near,  { scale: 1.085, xPercent: -1.5, yPercent: 2.4, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.1)
-      .to(mid,   { scale: 1.07, xPercent: 1.4, yPercent: 1.8, opacity: 0, duration: 2.9, ease: "power1.inOut" }, 0.18)
-      .to(media, { scale: 1, yPercent: 0, duration: 3.02, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.16);
+    tl.set(haze, { opacity: 1 })
+      .set(far,  { opacity: 0.34, scale: 1.015, xPercent: 1.2, yPercent: 1.1 })
+      .set(mid,  { opacity: 0.48, scale: 1.025, xPercent: 1.6, yPercent: 1.1 })
+      .set(near, { opacity: 0.5, scale: 1.045, xPercent: 2.5, yPercent: 1.8 })
+      .to(haze,  { opacity: 0.96, duration: 0.9, ease: "none" }, 0)
+      .to(haze,  { opacity: 0.78, duration: 1.2, ease: "power1.inOut" }, 0.9)
+      .to(haze,  { opacity: 0.42, duration: 1.35, ease: "power1.inOut" }, 2.1)
+      .to(haze,  { opacity: 0.14, duration: 1.35, ease: "power1.inOut" }, 3.45)
+      .to(haze,  { opacity: 0, duration: 1.05, ease: "power1.inOut" }, 4.8)
+      .to(near,  { scale: 1.31, xPercent: -7.5, yPercent: -5.4, opacity: 0, duration: 4.9, ease: "power1.inOut" }, 0.12)
+      .to(mid,   { scale: 1.19, xPercent: -4.2, yPercent: -3.1, opacity: 0.08, duration: 5.3, ease: "power1.inOut" }, 0.18)
+      .to(mid,   { opacity: 0, duration: 0.72, ease: "power1.inOut" }, 5.05)
+      .to(far,   { scale: 1.105, xPercent: -1.5, yPercent: -1.5, opacity: 0, duration: 5.92, ease: "power1.inOut" }, 0.08)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 5.45, ease: "power1.inOut" }, 0)
+      .call(() => GlobalAudio.setStage("approach"), null, 2.7)
+      .call(() => HeroFilm.start(), null, 3.28);
 
-    this.appendReveal(tl, 3.55);
+    this.appendReveal(tl, 5.18);
     this.tl = tl;
     return tl;
   },
 
-  buildTablet(media, stage, haze, mid) {
+  buildTablet(media, stage, haze, far, mid) {
     const tl      = gsap.timeline({ onComplete: () => Experience.finishIntro() });
     gsap.set(stage, { opacity: 1 });
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.38, scale: 1, xPercent: 0.5, yPercent: 0.2 })
-      .to(mid,   { scale: 1.07, xPercent: 1.35, yPercent: 1.8, opacity: 0, duration: 2.75, ease: "power1.inOut" }, 0.12)
-      .to(haze,  { opacity: 0.94, duration: 0.5, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.58, duration: 0.75, ease: "power1.inOut" }, 0.5)
-      .to(haze,  { opacity: 0.16, duration: 0.9, ease: "power1.inOut" }, 1.25)
-      .to(haze,  { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 2.92, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.08);
-    this.appendReveal(tl, 3.42, 0.82);
+    tl.set(haze, { opacity: 1 })
+      .set(far,  { opacity: 0.3, scale: 1.015, xPercent: 1, yPercent: 0.9 })
+      .set(mid,  { opacity: 0.45, scale: 1.025, xPercent: 1.5, yPercent: 1.1 })
+      .to(haze,  { opacity: 0.94, duration: 0.8, ease: "none" }, 0)
+      .to(haze,  { opacity: 0.62, duration: 1.45, ease: "power1.inOut" }, 0.8)
+      .to(haze,  { opacity: 0.2, duration: 1.5, ease: "power1.inOut" }, 2.25)
+      .to(haze,  { opacity: 0, duration: 1.2, ease: "power1.inOut" }, 3.75)
+      .to(mid,   { scale: 1.17, xPercent: -3.8, yPercent: -2.8, opacity: 0, duration: 4.9, ease: "power1.inOut" }, 0.12)
+      .to(far,   { scale: 1.09, xPercent: -1.2, yPercent: -1.2, opacity: 0, duration: 5.25, ease: "power1.inOut" }, 0.08)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 4.9, ease: "power1.inOut" }, 0)
+      .call(() => GlobalAudio.setStage("approach"), null, 2.45)
+      .call(() => HeroFilm.start(), null, 2.95);
+    this.appendReveal(tl, 4.62, 0.84);
     this.tl = tl;
     return tl;
   },
 
-  buildMobile(media, stage, haze, mid) {
+  buildMobile(media, stage, haze, far, mid) {
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
     gsap.set(stage, { opacity: 1 });
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.34, scale: 1, xPercent: 0.4, yPercent: 0.2 })
-      .to(mid,   { scale: 1.06, xPercent: 1.2, yPercent: 1.6, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.08)
-      .to(haze,  { opacity: 0.92, duration: 0.45, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.62, duration: 0.7, ease: "power1.inOut" }, 0.45)
-      .to(haze,  { opacity: 0.16, duration: 1.0, ease: "power1.inOut" }, 1.15)
-      .to(haze,  { opacity: 0, duration: 0.75, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 2.72, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 2.86);
-    this.appendReveal(tl, 3.3, 0.76);
+    tl.set(haze, { opacity: 1 })
+      .set(far,  { opacity: 0.28, scale: 1.01, xPercent: 0.8, yPercent: 0.8 })
+      .set(mid,  { opacity: 0.42, scale: 1.02, xPercent: 1.2, yPercent: 1 })
+      .to(haze,  { opacity: 0.94, duration: 0.72, ease: "none" }, 0)
+      .to(haze,  { opacity: 0.64, duration: 1.25, ease: "power1.inOut" }, 0.72)
+      .to(haze,  { opacity: 0.2, duration: 1.45, ease: "power1.inOut" }, 1.97)
+      .to(haze,  { opacity: 0, duration: 1.05, ease: "power1.inOut" }, 3.42)
+      .to(mid,   { scale: 1.15, xPercent: -3.4, yPercent: -2.5, opacity: 0, duration: 4.45, ease: "power1.inOut" }, 0.08)
+      .to(far,   { scale: 1.08, xPercent: -1.1, yPercent: -1.1, opacity: 0, duration: 4.7, ease: "power1.inOut" }, 0.08)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 4.5, ease: "power1.inOut" }, 0)
+      .call(() => GlobalAudio.setStage("approach"), null, 2.25)
+      .call(() => HeroFilm.start(), null, 2.72);
+    this.appendReveal(tl, 4.28, 0.78);
     this.tl = tl;
     return tl;
   },
@@ -937,8 +1115,9 @@ const Intro = {
     tl.set(haze,  { opacity: 0.5 })
       .set(media, { scale: 1, yPercent: 0 })
       .to(haze, { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 0.1)
-      .call(() => HeroFilm.start(), null, 0.82);
-    this.appendReveal(tl, 1.15, 0.55);
+      .call(() => HeroFilm.start(), null, 0.68)
+      .call(() => GlobalAudio.setStage("approach"), null, 0.75);
+    this.appendReveal(tl, 1.05, 0.5);
     this.tl = tl;
     return tl;
   },
@@ -968,7 +1147,7 @@ const Intro = {
 };
 
 /* --------------------------------------------------------------------------
-   6. SceneDeck — manage cinematic layer DOM
+   8. SceneDeck — manage cinematic layer DOM
    -------------------------------------------------------------------------- */
 
 const SceneDeck = {
@@ -1127,7 +1306,7 @@ const SceneDeck = {
 };
 
 /* --------------------------------------------------------------------------
-   7. Scene Navigation — one gesture = one scene, guaranteed
+   9. Scene Navigation — one gesture = one scene, guaranteed
    -------------------------------------------------------------------------- */
 
 const SceneNavigation = {
@@ -1217,6 +1396,7 @@ const SceneNavigation = {
     this.isTransitioning = true;
     this.dismissCue();
     this.stopAmbient();
+    GlobalAudio.setScene(target);
     SceneDeck.load(target);
 
     /* Safety: if transition never completes, force-unlock after 2× duration + 800ms */
@@ -1538,7 +1718,7 @@ const SceneNavigation = {
 };
 
 /* --------------------------------------------------------------------------
-   8. Interface — HUD, menu (built dynamically from scene config)
+   10. Interface — HUD, menu (built dynamically from scene config)
    -------------------------------------------------------------------------- */
 
 const Interface = {
@@ -1611,6 +1791,7 @@ const Interface = {
     this.menu.dataset.open = "true";
     this.menu.setAttribute("aria-hidden", "false");
     this.trigger.setAttribute("aria-expanded", "true");
+    GlobalAudio.setMenu(true);
     body.style.overflow = "hidden";
     const first = $(".menu__link", this.menu);
     requestAnimationFrame(() => first && first.focus());
@@ -1620,6 +1801,7 @@ const Interface = {
     this.menu.dataset.open = "false";
     this.menu.setAttribute("aria-hidden", "true");
     this.trigger.setAttribute("aria-expanded", "false");
+    GlobalAudio.setMenu(false);
     if (body.dataset.state === "ready") body.style.overflow = "hidden";
     if (restoreFocus && this.lastFocus) this.lastFocus.focus();
   },
@@ -1635,7 +1817,7 @@ const Interface = {
 };
 
 /* --------------------------------------------------------------------------
-   9. Boot
+   11. Boot
    -------------------------------------------------------------------------- */
 
 const Experience = {
@@ -1646,6 +1828,7 @@ const Experience = {
     SceneDeck.render();
     this.applyFraming();
     Interface.init();
+    GlobalAudio.init();
 
     await Loader.run();
     Loader.dismiss();
@@ -1690,6 +1873,7 @@ const Experience = {
     /* 4. Set ready state */
     body.dataset.state = "ready";
     performance.mark("benghazi-interactive");
+    GlobalAudio.setScene(0);
 
     /* 5. Guarantee no overflow/touch-action lock remains */
     document.documentElement.style.touchAction = "none";
@@ -1722,10 +1906,12 @@ const Experience = {
       if (document.hidden) {
         Atmosphere.pause();
         HeroFilm.pause();
+        GlobalAudio.setVisibility(true);
         if (Intro.tl) Intro.tl.pause();
       } else {
         Atmosphere.resume();
         HeroFilm.resume();
+        GlobalAudio.setVisibility(false);
         if (Intro.tl) Intro.tl.resume();
       }
     });
@@ -1778,6 +1964,7 @@ if (window.gsap) {
   Experience.start();
 } else {
   /* No GSAP: static fallback */
+  GlobalAudio.init();
   SceneDeck.render();
   Experience.applyFraming();
   const heroImg = $("#hero-image");

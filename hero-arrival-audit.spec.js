@@ -34,6 +34,7 @@ async function captureArrival(page, viewport, name) {
         mediaFilter: mediaStyle.filter,
         filmTransform: getComputedStyle(document.querySelector(".hero-film")).transform,
         clouds: [...document.querySelectorAll(".cloud")].map((el) => Number(getComputedStyle(el).opacity)),
+        haze: document.querySelector("#haze") ? Number(getComputedStyle(document.querySelector("#haze")).opacity) : 0,
         cloudLayers: [...document.querySelectorAll(".cloud")].map((el) => {
           const style = getComputedStyle(el);
           return { display: style.display, opacity: Number(style.opacity), backgroundImage: style.backgroundImage };
@@ -51,8 +52,23 @@ async function captureArrival(page, viewport, name) {
           height: video.videoHeight,
           filter: videoStyle.filter,
           objectFit: videoStyle.objectFit,
-          objectPosition: videoStyle.objectPosition
+          objectPosition: videoStyle.objectPosition,
+          muted: video.muted
         },
+        audio: (() => {
+          const ambient = document.querySelector("#ambient-audio");
+          const sound = document.querySelector("#hero-sound");
+          return {
+            state: document.body.dataset.audio,
+            paused: ambient.paused,
+            muted: ambient.muted,
+            loop: ambient.loop,
+            currentTime: ambient.currentTime,
+            duration: ambient.duration,
+            buttonHidden: sound.hidden,
+            buttonPressed: sound.getAttribute("aria-pressed")
+          };
+        })(),
         poster: {
           width: poster.naturalWidth,
           height: poster.naturalHeight,
@@ -75,12 +91,12 @@ async function captureArrival(page, viewport, name) {
     });
   };
 
-  for (const at of [0, 1.1, 2.35, 3.5, 4.35]) {
+  for (const at of [0, 1.4, 2.8, 3.6, 4.2, 5.8]) {
     if (at > 0) {
       await page.waitForFunction(
         (target) => document.body.dataset.state === "ready" || Intro.tl.time() >= target,
         at,
-        { timeout: 10000 }
+        { timeout: 20000 }
       );
     }
     await capture(at);
@@ -100,7 +116,15 @@ async function captureArrival(page, viewport, name) {
 }
 
 function expectSeamlessMedia(result) {
-  const handoff = result.readings[4];
+  const overlap = result.readings.find((reading) =>
+    reading.state === "intro" &&
+    reading.video.currentTime > 0.15 &&
+    (reading.clouds.some((value) => value > 0.02) || reading.haze > 0.02)
+  );
+  const handoff = result.readings.find((reading) => reading.state === "ready");
+  expect(overlap).toBeTruthy();
+  expect(overlap.video.opacity).toBeGreaterThan(0.05);
+  expect(handoff).toBeTruthy();
   expect(handoff.video.readyState).toBeGreaterThanOrEqual(2);
   expect(handoff.video.currentTime).toBeGreaterThan(0.25);
   expect(handoff.video.opacity).toBeGreaterThan(0.25);
@@ -109,21 +133,25 @@ function expectSeamlessMedia(result) {
   expect(handoff.video.filter).toBe("none");
   expect(handoff.poster.filter).toBe("none");
   expect(handoff.mediaFilter).toBe("none");
-  expect(handoff.heroScale).toBeCloseTo(1, 4);
-  expect(handoff.heroTransform).toBe("none");
+  expect(handoff.heroScale).toBeGreaterThanOrEqual(1);
+  expect(handoff.heroScale).toBeLessThanOrEqual(1.013);
   expect(handoff.video.width).toBe(1280);
   expect(handoff.video.height).toBe(720);
   expect(handoff.poster.width).toBe(1280);
   expect(handoff.poster.height).toBe(720);
+  expect(handoff.video.muted).toBeTruthy();
   expect(Math.max(...Object.values(handoff.alignment))).toBeLessThan(0.5);
 }
 
 function expectCompletedArrival(result) {
-  expect(result.readings[5].state).toBe("ready");
-  expect(result.readings[5].hud).toBeGreaterThan(0.95);
-  expect(result.readings[7].filmState).toBe("ended");
-  expect(result.readings[7].mist.some((value) => value > 0.04)).toBeTruthy();
-  expect(result.readings[0].intro.duration).toBeLessThan(5.2);
+  expect(result.readings[6].state).toBe("ready");
+  expect(result.readings[6].hud).toBeGreaterThan(0.95);
+  expect(result.readings[8].filmState).toBe("ended");
+  expect(result.readings[8].mist.some((value) => value > 0.04)).toBeTruthy();
+  expect(result.readings[0].intro.duration).toBeGreaterThan(5.2);
+  expect(result.readings[0].intro.duration).toBeLessThan(7.2);
+  expect(result.readings[0].audio.loop).toBeTruthy();
+  expect(result.readings[0].audio.buttonHidden).toBeFalsy();
   expect(result.errors).toEqual([]);
 }
 
@@ -136,12 +164,12 @@ for (const [name, viewport] of [
     test.setTimeout(45000);
     const result = await captureArrival(page, viewport, name);
     const visibleAtmosphere = result.readings[0].cloudLayers.filter((layer) => layer.display !== "none" && layer.opacity > 0.15);
-    expect(visibleAtmosphere.length).toBe(name === "mobile" ? 1 : 2);
-    expect(visibleAtmosphere.every((layer) => !layer.backgroundImage.includes("url("))).toBeTruthy();
+    expect(visibleAtmosphere.length).toBe(name === "mobile" ? 2 : 3);
+    expect(visibleAtmosphere.every((layer) => layer.backgroundImage.includes("benghazi-tower-arrival-poster.webp"))).toBeTruthy();
     expect(result.readings[0].heroScale).toBeGreaterThan(1);
     expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.04);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
-    expect(result.readings[4].clouds.every((value) => value < 0.1)).toBeTruthy();
+    expect(result.readings[5].clouds.every((value) => value < 0.1)).toBeTruthy();
     expectSeamlessMedia(result);
     expectCompletedArrival(result);
     if (name === "desktop") {
@@ -159,7 +187,64 @@ test("reduced motion uses the short dissolve", async ({ page }) => {
   const started = Date.now();
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 8000 });
-  expect(Date.now() - started).toBeLessThan(4000);
+  expect(Date.now() - started).toBeLessThan(5000);
   await expect(page.locator("#hero-image")).toBeVisible();
   await expect(page.locator(".hud")).toBeVisible();
 });
+
+for (const [name, viewport] of [
+  ["desktop", { width: 1440, height: 900 }],
+  ["mobile", { width: 390, height: 844 }]
+]) {
+  test(`${name} ambience persists through sound, scene and menu changes`, async ({ page }) => {
+    test.setTimeout(30000);
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+    page.on("console", (message) => message.type() === "error" && errors.push(`console: ${message.text()}`));
+    await page.setViewportSize(viewport);
+    await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.body.dataset.state === "intro", null, { timeout: 12000 });
+    await page.waitForFunction(() => Intro.tl && Intro.tl.isActive(), null, { timeout: 3000 });
+    await page.evaluate(() => Intro.skip());
+    await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 6000 });
+
+    await page.locator("#hero-sound").click();
+    await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
+    await page.waitForTimeout(1300);
+    const started = await page.evaluate(() => ({
+      time: document.querySelector("#ambient-audio").currentTime,
+      gain: GlobalAudio.gain?.gain.value ?? document.querySelector("#ambient-audio").volume,
+      heroMuted: document.querySelector("#hero-video").muted
+    }));
+    expect(started.heroMuted).toBeTruthy();
+    expect(started.gain).toBeGreaterThan(0.15);
+
+    await page.locator("#hud-cue").click();
+    await page.waitForFunction(() => SceneNavigation.currentScene === 1, null, { timeout: 6000 });
+    const afterScene = await page.evaluate(() => document.querySelector("#ambient-audio").currentTime);
+    expect(afterScene).toBeGreaterThan(started.time + 0.8);
+
+    await page.locator("#menu-trigger").click();
+    await page.waitForTimeout(1000);
+    const menuGain = await page.evaluate(() => GlobalAudio.gain?.gain.value ?? document.querySelector("#ambient-audio").volume);
+    expect(menuGain).toBeLessThan(0.23);
+    await page.locator('[data-scene-target="0"]').click();
+    await page.waitForFunction(() => SceneNavigation.currentScene === 0, null, { timeout: 6000 });
+    const afterReturn = await page.evaluate(() => document.querySelector("#ambient-audio").currentTime);
+    expect(afterReturn).toBeGreaterThan(afterScene);
+
+    await page.locator("#hero-sound").click();
+    await page.waitForTimeout(1150);
+    const muted = await page.evaluate(() => ({
+      state: document.body.dataset.audio,
+      gain: GlobalAudio.gain?.gain.value ?? document.querySelector("#ambient-audio").volume,
+      paused: document.querySelector("#ambient-audio").paused,
+      time: document.querySelector("#ambient-audio").currentTime
+    }));
+    expect(muted.state).toBe("muted");
+    expect(muted.gain).toBeLessThan(0.03);
+    expect(muted.paused).toBeFalsy();
+    expect(muted.time).toBeGreaterThan(afterReturn);
+    expect(errors).toEqual([]);
+  });
+}

@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/video/benghazi-tower-arrival-poster.webp" type="image/webp">
+<link rel="preload" as="audio" href="assets/audio/benghazi-ambient.mp3" type="audio/mpeg">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -68,6 +69,7 @@
               class="hero-media__video"
               id="hero-video"
               playsinline
+              muted
               preload="auto"
               poster="assets/video/benghazi-tower-arrival-poster.webp"
               aria-hidden="true">
@@ -101,6 +103,11 @@
 
 </main>
 
+<!-- One continuous environmental soundtrack; the film remains picture-only. -->
+<audio id="ambient-audio" preload="auto" loop playsinline aria-hidden="true">
+  <source src="assets/audio/benghazi-ambient.mp3" type="audio/mpeg">
+</audio>
+
 <!-- ── Interface ─────────────────────────────────────────────────────────── -->
 <div class="hud">
   <p class="hud__wordmark u-label">Benghazi Tower</p>
@@ -110,7 +117,7 @@
     <span class="hud__menu-glyph" aria-hidden="true"><i></i><i></i></span>
   </button>
 
-  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Enable film sound" hidden>
+  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Enable ambient sound" aria-pressed="false">
     <span class="hud__sound-mark" aria-hidden="true"><i></i><i></i><i></i></span>
     <span>Sound</span>
   </button>
