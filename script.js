@@ -581,21 +581,28 @@ const AmbientSound = {
   sceneIndex:  0,
   menuDucked:  false,
   playPromise: null,
+  timelineStartedAt: 0,
+  hasStartedPlayback: false,
   unlockConsumed: false,
   _firstPointer: null,
+  _firstTouch: null,
+  _firstClick: null,
   _firstKey: null,
 
   init() {
     if (this.bound || !this.el) return;
     this.bound = true;
     this.el.loop = true;
-    this.el.muted = false;
+    this.el.muted = true;
     this.el.volume = 1;
+    this.timelineStartedAt = performance.now();
     body.dataset.audio = "muted";
     this.updateButton();
+    this.ensurePlaying();
 
     this.button?.addEventListener("click", (event) => {
       event.stopPropagation();
+      this.consumeUnlock();
       if (this.enabled) this.disable();
       else this.enable();
     });
@@ -603,24 +610,35 @@ const AmbientSound = {
     const firstInteraction = (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest("#hero-sound")) return;
-      if (this.unlockConsumed) return;
-      this.unlockConsumed = true;
-      this.removeUnlockListeners();
+      if (!this.consumeUnlock()) return;
       this.enable();
     };
     this._firstPointer = firstInteraction;
+    this._firstTouch = firstInteraction;
+    this._firstClick = firstInteraction;
     this._firstKey = firstInteraction;
     document.addEventListener("pointerdown", this._firstPointer, { capture: true, passive: true });
+    document.addEventListener("touchstart", this._firstTouch, { capture: true, passive: true });
+    document.addEventListener("click", this._firstClick, { capture: true, passive: true });
     document.addEventListener("keydown", this._firstKey, { capture: true });
-    this.el.addEventListener("ended", () => {
-      if (this.enabled) this.ensurePlaying();
-    });
+    this.el.addEventListener("ended", () => this.ensurePlaying());
+  },
+
+  consumeUnlock() {
+    if (this.unlockConsumed) return false;
+    this.unlockConsumed = true;
+    this.removeUnlockListeners();
+    return true;
   },
 
   removeUnlockListeners() {
     if (this._firstPointer) document.removeEventListener("pointerdown", this._firstPointer, true);
+    if (this._firstTouch) document.removeEventListener("touchstart", this._firstTouch, true);
+    if (this._firstClick) document.removeEventListener("click", this._firstClick, true);
     if (this._firstKey) document.removeEventListener("keydown", this._firstKey, true);
     this._firstPointer = null;
+    this._firstTouch = null;
+    this._firstClick = null;
     this._firstKey = null;
   },
 
@@ -646,17 +664,37 @@ const AmbientSound = {
 
   ensurePlaying() {
     if (!this.el) return Promise.resolve(false);
-    if (!this.el.paused) return Promise.resolve(true);
+    if (!this.el.paused) {
+      this.hasStartedPlayback = true;
+      return Promise.resolve(true);
+    }
     if (this.playPromise) return this.playPromise;
     const request = this.el.play();
     if (!request || typeof request.then !== "function") {
       return Promise.resolve(!this.el.paused);
     }
     this.playPromise = request
-      .then(() => true)
+      .then(() => {
+        this.hasStartedPlayback = true;
+        return true;
+      })
       .catch(() => false)
       .finally(() => { this.playPromise = null; });
     return this.playPromise;
+  },
+
+  alignInitialTimeline() {
+    if (!this.el || this.hasStartedPlayback || !this.el.paused) return;
+    const duration = this.el.duration;
+    const elapsed = Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
+    if (Number.isFinite(duration) && duration > 0 && elapsed > 0.35) {
+      this.el.currentTime = elapsed % duration;
+    }
+  },
+
+  timelineTime() {
+    if (this.hasStartedPlayback || !this.el?.paused) return this.el?.currentTime || 0;
+    return Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
   },
 
   async enable() {
@@ -669,8 +707,9 @@ const AmbientSound = {
     const resume = this.context?.state === "suspended"
       ? this.context.resume().catch(() => {})
       : Promise.resolve();
-    this.el.muted = false;
     if (!hasGraph) this.el.volume = 0;
+    const alignOnStart = !this.hasStartedPlayback && this.el.paused;
+    this.alignInitialTimeline();
     const played = this.ensurePlaying();
     const [, didPlay] = await Promise.all([resume, played]);
     if (didPlay === false || this.el.paused) {
@@ -680,10 +719,15 @@ const AmbientSound = {
       this.updateButton();
       return;
     }
+    if (alignOnStart && Number.isFinite(this.el.duration) && this.el.duration > 0) {
+      const elapsed = Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
+      this.el.currentTime = elapsed % this.el.duration;
+    }
 
     this.enabled = true;
     this.starting = false;
     body.dataset.audio = "on";
+    this.el.muted = false;
     this.fadeTo(this.targetGain(), 1.8);
     this.updateButton();
   },
@@ -737,8 +781,7 @@ const AmbientSound = {
   },
 
   recoverFromBrowserInterruption() {
-    if (!this.enabled) return;
-    if (this.context?.state === "suspended") this.context.resume().catch(() => {});
+    if (this.enabled && this.context?.state === "suspended") this.context.resume().catch(() => {});
     if (this.el?.paused) this.ensurePlaying();
   },
 
@@ -766,15 +809,25 @@ const HeroFilm = {
   tracking: null,
   wasPlaying: false,
 
+  silence() {
+    if (!this.el) return;
+    this.el.defaultMuted = true;
+    if (!this.el.muted) this.el.muted = true;
+    if (this.el.volume !== 0) this.el.volume = 0;
+  },
+
   bind() {
     if (this.bound || !this.el) return;
     this.bound = true;
+    this.silence();
+    this.el.addEventListener("volumechange", () => this.silence());
     this.el.addEventListener("ended", () => this.settle());
   },
 
   prepare(onProgress = () => {}) {
     if (!this.el) return Promise.resolve(false);
     this.bind();
+    this.silence();
     if (this.el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
       this.ready = true;
       onProgress(1);
@@ -818,7 +871,7 @@ const HeroFilm = {
     if (!this.el || !this.ready || this.started) return;
     this.started = true;
     this.el.currentTime = 0;
-    this.el.muted = true;
+    this.silence();
 
     try {
       await this.el.play();
@@ -898,6 +951,7 @@ const HeroFilm = {
 
   resume() {
     if (!this.el || this.ended || !this.wasPlaying || SceneNavigation.currentScene !== 0) return;
+    this.silence();
     this.el.play().catch(() => {});
     this.tracking?.resume();
   }
@@ -1041,7 +1095,7 @@ const Intro = {
     gsap.set($("#hero-video"), { opacity: 0 });
     HeroFilm.syncTracking(false);
 
-    if (Env.introMode === "lite")    return this.buildReduced(media, haze);
+    if (Env.introMode === "lite")    return this.buildReduced(media, haze, far, mid);
     if (Env.mobile)                  return this.buildMobile(media, stage, haze, far, mid);
     if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, far, mid);
 
@@ -1118,14 +1172,25 @@ const Intro = {
     return tl;
   },
 
-  buildReduced(media, haze) {
+  buildReduced(media, haze, far, mid) {
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
-    tl.set(haze,  { opacity: 0.5 })
-      .set(media, { scale: 1, yPercent: 0 })
-      .to(haze, { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 0.1)
-      .call(() => HeroFilm.start(), null, 0.68)
-      .call(() => AmbientSound.setStage("approach"), null, 0.75);
-    this.appendReveal(tl, 1.05, 0.5);
+    tl.set(haze,  { opacity: 1 })
+      .set(far,   { opacity: 0.3, scale: 1.005, xPercent: 0.7, yPercent: 0.7 })
+      .set(mid,   { opacity: 0.44, scale: 1.01, xPercent: 1, yPercent: 0.9 })
+      .set(media, { scale: 1.012, xPercent: -0.1, yPercent: 0.6 })
+      .to(haze, { opacity: 0.97, duration: 2.8, ease: "none" }, 0)
+      .to(haze, { opacity: 0.82, duration: 2.6, ease: "power1.inOut" }, 2.8)
+      .to(haze, { opacity: 0.54, duration: 2.3, ease: "power1.inOut" }, 5.4)
+      .to(haze, { opacity: 0.22, duration: 2, ease: "power1.inOut" }, 7.7)
+      .to(haze, { opacity: 0, duration: 2.1, ease: "power1.inOut" }, 9.7)
+      .to(mid, { opacity: 0.24, scale: 1.04, xPercent: -0.5, yPercent: -0.45, duration: 8.5, ease: "power1.inOut" }, 0.08)
+      .to(mid, { opacity: 0, scale: 1.07, xPercent: -1.4, yPercent: -1.2, duration: 3.3, ease: "power1.inOut" }, 8.5)
+      .to(far, { opacity: 0.16, scale: 1.025, xPercent: -0.2, yPercent: -0.2, duration: 9, ease: "power1.inOut" }, 0.08)
+      .to(far, { opacity: 0, scale: 1.045, xPercent: -0.7, yPercent: -0.65, duration: 2.8, ease: "power1.inOut" }, 9)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 11.5, ease: "power1.inOut" }, 0)
+      .call(() => AmbientSound.setStage("approach"), null, 5.7)
+      .call(() => HeroFilm.start(), null, 8.9);
+    this.appendReveal(tl, 10.9, 0.72);
     this.tl = tl;
     return tl;
   },

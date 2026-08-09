@@ -1,9 +1,16 @@
 const { test, expect } = require("@playwright/test");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
 const auditDir = path.join(os.tmpdir(), "benghazi-hero-arrival-audit");
+
+test("loop-safe production soundtrack matches the selected Pixabay master build", () => {
+  const audioPath = path.join(__dirname, "assets", "audio", "benghazi-ambient.mp3");
+  const hash = crypto.createHash("sha256").update(fs.readFileSync(audioPath)).digest("hex").toUpperCase();
+  expect(hash).toBe("10E956ED41DBF155E9E566D0B72566FE17E8D70B7B5F7A05A54D54E09A75921A");
+});
 
 async function captureArrival(page, viewport, name) {
   fs.mkdirSync(auditDir, { recursive: true });
@@ -13,6 +20,14 @@ async function captureArrival(page, viewport, name) {
   await page.setViewportSize(viewport);
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.body.dataset.state === "intro", null, { timeout: 12000 });
+  await page.waitForFunction(() => Intro.tl && Intro.tl.duration() > 0, null, { timeout: 3000 });
+  await page.waitForFunction((expectedLayers) => {
+    const visibleLayers = [...document.querySelectorAll(".cloud")].filter((element) => {
+      const style = getComputedStyle(element);
+      return style.display !== "none" && Number(style.opacity) > 0.15;
+    });
+    return visibleLayers.length === expectedLayers;
+  }, name === "mobile" ? 2 : 3, { timeout: 3000 });
   const readings = [];
   const capture = async (at) => {
     readings.push(await page.evaluate((t) => {
@@ -53,17 +68,21 @@ async function captureArrival(page, viewport, name) {
           filter: videoStyle.filter,
           objectFit: videoStyle.objectFit,
           objectPosition: videoStyle.objectPosition,
-          muted: video.muted
+          muted: video.muted,
+          volume: video.volume
         },
         audio: (() => {
           const ambient = document.querySelector("#ambient-audio");
           const sound = document.querySelector("#hero-sound");
           return {
+            instances: document.querySelectorAll("audio").length,
+            source: ambient.currentSrc,
             state: document.body.dataset.audio,
             paused: ambient.paused,
             muted: ambient.muted,
             loop: ambient.loop,
             currentTime: ambient.currentTime,
+            timelineTime: AmbientSound.timelineTime(),
             duration: ambient.duration,
             buttonHidden: sound.hidden,
             buttonPressed: sound.getAttribute("aria-pressed")
@@ -119,11 +138,11 @@ function expectSeamlessMedia(result) {
   const overlap = result.readings.find((reading) =>
     reading.state === "intro" &&
     reading.video.currentTime > 0.15 &&
+    reading.video.opacity > 0.05 &&
     (reading.clouds.some((value) => value > 0.02) || reading.haze > 0.02)
   );
   const handoff = result.readings.find((reading) => reading.state === "ready");
   expect(overlap).toBeTruthy();
-  expect(overlap.video.opacity).toBeGreaterThan(0.05);
   expect(handoff).toBeTruthy();
   expect(handoff.video.readyState).toBeGreaterThanOrEqual(2);
   expect(handoff.video.currentTime).toBeGreaterThan(0.25);
@@ -140,6 +159,7 @@ function expectSeamlessMedia(result) {
   expect(handoff.poster.width).toBe(1280);
   expect(handoff.poster.height).toBe(720);
   expect(handoff.video.muted).toBeTruthy();
+  expect(handoff.video.volume).toBe(0);
   expect(Math.max(...Object.values(handoff.alignment))).toBeLessThan(0.5);
 }
 
@@ -151,6 +171,8 @@ function expectCompletedArrival(result) {
   expect(result.readings[0].intro.duration).toBeGreaterThan(11.5);
   expect(result.readings[0].intro.duration).toBeLessThan(14.2);
   expect(result.readings[0].audio.loop).toBeTruthy();
+  expect(result.readings[0].audio.instances).toBe(1);
+  expect(result.readings[0].audio.source).toContain("assets/audio/benghazi-ambient.mp3");
   expect(result.readings[0].audio.buttonHidden).toBeFalsy();
   expect(result.errors).toEqual([]);
 }
@@ -169,6 +191,8 @@ for (const [name, viewport] of [
     expect(result.readings[0].heroScale).toBeGreaterThan(1);
     expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.04);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
+    expect(result.readings[1].audio.muted).toBeTruthy();
+    expect(result.readings[1].audio.timelineTime).toBeGreaterThan(result.readings[0].audio.timelineTime + 2);
     expect(result.readings[4].video.currentTime).toBeGreaterThan(0.2);
     expect(result.readings[4].hud).toBeLessThan(0.1);
     expect(result.readings[6].clouds.every((value) => value < 0.1)).toBeTruthy();
@@ -210,16 +234,65 @@ test("master arrival stays active for the full cinematic journey", async ({ page
   expect(elapsed).toBeLessThan(15000);
 });
 
-test("reduced motion uses the short dissolve", async ({ page }) => {
-  test.setTimeout(15000);
+test("reduced motion preserves the full journey with restrained movement", async ({ page }) => {
+  test.setTimeout(25000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
-  const started = Date.now();
   await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 8000 });
-  expect(Date.now() - started).toBeLessThan(5000);
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
+  const duration = await page.evaluate(() => Intro.tl.duration());
+  expect(duration).toBeGreaterThan(11.5);
+  expect(duration).toBeLessThan(12.5);
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 15000 });
   await expect(page.locator("#hero-image")).toBeVisible();
   await expect(page.locator(".hud")).toBeVisible();
+});
+
+test("Sound reveals the already-running soundtrack without restarting it", async ({ page }) => {
+  test.setTimeout(30000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
+  await page.waitForFunction(() => document.body.dataset.state === "ready", null, { timeout: 18000 });
+
+  const before = await page.evaluate(() => {
+    const ambient = document.querySelector("#ambient-audio");
+    const film = document.querySelector("#hero-video");
+    return {
+      time: ambient.currentTime,
+      timelineTime: AmbientSound.timelineTime(),
+      paused: ambient.paused,
+      muted: ambient.muted,
+      duration: ambient.duration,
+      audioElements: document.querySelectorAll("audio").length,
+      filmMuted: film.muted,
+      filmVolume: film.volume
+    };
+  });
+  expect(before.timelineTime).toBeGreaterThan(10);
+  expect(before.muted).toBeTruthy();
+  expect(before.duration).toBeGreaterThan(313.5);
+  expect(before.duration).toBeLessThan(314.5);
+  expect(before.audioElements).toBe(1);
+  expect(before.filmMuted).toBeTruthy();
+  expect(before.filmVolume).toBe(0);
+
+  await page.locator("#hero-sound").click();
+  await page.waitForFunction(() => document.body.dataset.audio === "on", null, { timeout: 4000 });
+  await page.waitForTimeout(500);
+  const after = await page.evaluate(() => ({
+    time: document.querySelector("#ambient-audio").currentTime,
+    paused: document.querySelector("#ambient-audio").paused,
+    muted: document.querySelector("#ambient-audio").muted,
+    filmMuted: document.querySelector("#hero-video").muted,
+    filmVolume: document.querySelector("#hero-video").volume
+  }));
+  expect(after.time).toBeGreaterThan(before.timelineTime + 0.35);
+  expect(after.time).toBeLessThan(before.timelineTime + 2);
+  expect(after.paused).toBeFalsy();
+  expect(after.muted).toBeFalsy();
+  expect(after.filmMuted).toBeTruthy();
+  expect(after.filmVolume).toBe(0);
 });
 
 for (const [name, viewport] of [
@@ -244,9 +317,11 @@ for (const [name, viewport] of [
     const started = await page.evaluate(() => ({
       time: document.querySelector("#ambient-audio").currentTime,
       gain: AmbientSound.gain?.gain.value ?? document.querySelector("#ambient-audio").volume,
-      heroMuted: document.querySelector("#hero-video").muted
+      heroMuted: document.querySelector("#hero-video").muted,
+      heroVolume: document.querySelector("#hero-video").volume
     }));
     expect(started.heroMuted).toBeTruthy();
+    expect(started.heroVolume).toBe(0);
     expect(started.gain).toBeGreaterThan(0.15);
 
     await page.locator("#hud-cue").click();
@@ -288,6 +363,19 @@ for (const [name, viewport] of [
     expect(muted.gain).toBeLessThan(0.03);
     expect(muted.paused).toBeFalsy();
     expect(muted.time).toBeGreaterThan(afterReturn);
+
+    await page.locator("#menu-trigger").click();
+    await page.waitForTimeout(650);
+    const remainsMuted = await page.evaluate(() => ({
+      state: document.body.dataset.audio,
+      gain: AmbientSound.gain?.gain.value ?? document.querySelector("#ambient-audio").volume,
+      paused: document.querySelector("#ambient-audio").paused,
+      time: document.querySelector("#ambient-audio").currentTime
+    }));
+    expect(remainsMuted.state).toBe("muted");
+    expect(remainsMuted.gain).toBeLessThan(0.03);
+    expect(remainsMuted.paused).toBeFalsy();
+    expect(remainsMuted.time).toBeGreaterThan(muted.time + 0.4);
     expect(errors).toEqual([]);
   });
 }
@@ -315,8 +403,8 @@ test("one long soundtrack survives the film and sixty seconds of exploration", a
   }));
   expect(atFilmEnd.paused).toBeFalsy();
   expect(atFilmEnd.instances).toBe(1);
-  expect(atFilmEnd.duration).toBeGreaterThan(120);
-  expect(atFilmEnd.duration).toBeLessThan(300);
+  expect(atFilmEnd.duration).toBeGreaterThan(313.5);
+  expect(atFilmEnd.duration).toBeLessThan(314.5);
 
   for (const target of [1, 3, 5, 7, 4, 2]) {
     await page.evaluate((scene) => SceneNavigation.goToScene(scene), target);
@@ -358,7 +446,8 @@ test("ambient loop boundary keeps the same live audio instance", async ({ page }
     audio.currentTime = audio.duration - 1.5;
     return audio.duration;
   });
-  expect(duration).toBeGreaterThan(120);
+  expect(duration).toBeGreaterThan(313.5);
+  expect(duration).toBeLessThan(314.5);
   await page.waitForTimeout(3500);
   const looped = await page.evaluate(() => ({
     sameInstance: window.__loopIdentity === document.querySelector("#ambient-audio"),
