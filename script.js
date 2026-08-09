@@ -5,11 +5,11 @@
      1.  experienceConfig      — curated 9-scene configuration
      2.  Env                   — viewport detection
      3.  Loader                — real progress; asks for the render if absent
-     4.  Atmosphere            — cloud plates and sky drift
-     5.  Intro                 — atmospheric descent (autoplay, once)
-     6.  SceneNavigation       — one gesture = one scene (desktop + touch)
-     7.  Interface             — HUD, menu, cue
-     8.  Boot
+     4.  AmbientSound          — persistent ambience and master gain
+     5.  HeroFilm              — silent live-film handoff
+     6.  Atmosphere + Intro    — cloud depth and one-time descent
+     7.  SceneNavigation       — one gesture = one scene (desktop + touch)
+     8.  Interface + Boot      — HUD, menu, cue, startup
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -25,7 +25,7 @@ const experienceConfig = {
     tabletPortrait: { dprCap: 1.5,  cloudCount: 1, mistCount: 1, skyDrift: false },
     tabletLite:     { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
     mobile:         { dprCap: 1.25, cloudCount: 1, mistCount: 1, skyDrift: false },
-    lite:           { dprCap: 1,    cloudCount: 0, mistCount: 0, skyDrift: false }
+    lite:           { dprCap: 1,    cloudCount: 1, mistCount: 1, skyDrift: false }
   },
 
   /* Hero render */
@@ -526,7 +526,7 @@ const Loader = {
     if (hero) hero.src = src;
     this.heroSrc = src;
     body.dataset.hero = "";
-    if (Env.introMode === "desktop") Atmosphere.deriveFromRender(src);
+    Atmosphere.deriveFromRender(src);
   },
 
   async run() {
@@ -565,13 +565,233 @@ const Loader = {
 };
 
 /* --------------------------------------------------------------------------
-   4. Hero film — frame-zero handoff, audio fallback, portrait tracking
+   4. Global audio — one persistent soundtrack and master gain
+   -------------------------------------------------------------------------- */
+
+const AmbientSound = {
+  el:          $("#ambient-audio"),
+  button:      $("#hero-sound"),
+  enabled:     false,
+  bound:       false,
+  starting:    false,
+  startingAutoplay: false,
+  stage:       "intro",
+  sceneIndex:  0,
+  menuDucked:  false,
+  playPromise: null,
+  startAttempt: 0,
+  timelineStartedAt: 0,
+  hasStartedPlayback: false,
+  unlockConsumed: false,
+  _firstPointer: null,
+  _firstTouch: null,
+  _firstClick: null,
+  _firstWheel: null,
+  _firstKey: null,
+
+  init() {
+    if (this.bound || !this.el) return;
+    this.bound = true;
+    this.el.loop = true;
+    this.el.muted = false;
+    this.el.volume = this.targetGain();
+    this.timelineStartedAt = performance.now();
+    body.dataset.audio = "starting";
+    this.updateButton();
+
+    this.button?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (this.enabled) this.disable();
+      else this.startFromInteraction();
+    });
+
+    const firstInteraction = (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("#hero-sound")) return;
+      if (this.unlockConsumed || this.enabled) return;
+      this.startFromInteraction();
+    };
+    this._firstPointer = firstInteraction;
+    this._firstTouch = firstInteraction;
+    this._firstClick = firstInteraction;
+    this._firstWheel = firstInteraction;
+    this._firstKey = firstInteraction;
+    document.addEventListener("pointerdown", this._firstPointer, { capture: true, passive: true });
+    document.addEventListener("touchstart", this._firstTouch, { capture: true, passive: true });
+    document.addEventListener("click", this._firstClick, { capture: true, passive: true });
+    document.addEventListener("wheel", this._firstWheel, { capture: true, passive: true });
+    document.addEventListener("keydown", this._firstKey, { capture: true });
+    this.el.addEventListener("ended", () => this.ensurePlaying());
+    this.enable({ autoplay: true });
+  },
+
+  startFromInteraction() {
+    if (!this.el || this.enabled || this.unlockConsumed) return;
+    if (this.starting) {
+      if (!this.startingAutoplay) return;
+      this.starting = false;
+      this.startingAutoplay = false;
+      this.playPromise = null;
+    }
+    this.enable();
+  },
+
+  removeUnlockListeners() {
+    if (this._firstPointer) document.removeEventListener("pointerdown", this._firstPointer, true);
+    if (this._firstTouch) document.removeEventListener("touchstart", this._firstTouch, true);
+    if (this._firstClick) document.removeEventListener("click", this._firstClick, true);
+    if (this._firstWheel) document.removeEventListener("wheel", this._firstWheel, true);
+    if (this._firstKey) document.removeEventListener("keydown", this._firstKey, true);
+    this._firstPointer = null;
+    this._firstTouch = null;
+    this._firstClick = null;
+    this._firstWheel = null;
+    this._firstKey = null;
+  },
+
+  ensurePlaying() {
+    if (!this.el) return Promise.resolve(false);
+    if (!this.el.paused) {
+      this.hasStartedPlayback = true;
+      return Promise.resolve(true);
+    }
+    if (this.playPromise) return this.playPromise;
+    const request = this.el.play();
+    if (!request || typeof request.then !== "function") {
+      return Promise.resolve(!this.el.paused);
+    }
+    const pending = request
+      .then(() => {
+        this.hasStartedPlayback = true;
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => {
+        if (this.playPromise === pending) this.playPromise = null;
+      });
+    this.playPromise = pending;
+    return pending;
+  },
+
+  alignInitialTimeline() {
+    if (!this.el || this.hasStartedPlayback || !this.el.paused) return;
+    const duration = this.el.duration;
+    const elapsed = Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
+    if (Number.isFinite(duration) && duration > 0 && elapsed > 0.35) {
+      this.el.currentTime = elapsed % duration;
+    }
+  },
+
+  timelineTime() {
+    if (this.hasStartedPlayback || !this.el?.paused) return this.el?.currentTime || 0;
+    return Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
+  },
+
+  async enable({ autoplay = false } = {}) {
+    if (!this.el || this.enabled || this.starting) return;
+    const attempt = ++this.startAttempt;
+    this.starting = true;
+    this.startingAutoplay = autoplay;
+    body.dataset.audio = "starting";
+    this.updateButton();
+
+    const alignOnStart = !this.hasStartedPlayback && this.el.paused;
+    this.alignInitialTimeline();
+    this.el.muted = false;
+    if (autoplay) this.el.volume = this.targetGain();
+    const didPlay = await this.ensurePlaying();
+    if (attempt !== this.startAttempt) return;
+    if (didPlay === false || this.el.paused) {
+      this.enabled = false;
+      this.starting = false;
+      this.startingAutoplay = false;
+      body.dataset.audio = "blocked";
+      this.updateButton();
+      return;
+    }
+    if (alignOnStart && Number.isFinite(this.el.duration) && this.el.duration > 0) {
+      const elapsed = Math.max(0, (performance.now() - this.timelineStartedAt) / 1000);
+      this.el.currentTime = elapsed % this.el.duration;
+    }
+
+    this.enabled = true;
+    this.starting = false;
+    this.startingAutoplay = false;
+    this.unlockConsumed = true;
+    this.removeUnlockListeners();
+    body.dataset.audio = "on";
+    if (!autoplay || this.el.volume < this.targetGain() * 0.8) {
+      this.fadeTo(this.targetGain(), 1.35);
+    }
+    this.updateButton();
+  },
+
+  disable() {
+    if (!this.enabled) return;
+    this.enabled = false;
+    this.starting = false;
+    this.startingAutoplay = false;
+    body.dataset.audio = "muted";
+    this.fadeTo(0, 1);
+    this.updateButton();
+  },
+
+  targetGain() {
+    if (this.menuDucked) return 0.16;
+    if (this.stage === "intro") return 0.15;
+    if (this.stage === "approach") return 0.24;
+    if (this.sceneIndex === 0) return 0.34;
+    if ([4, 7].includes(this.sceneIndex)) return 0.28;
+    return 0.23;
+  },
+
+  fadeTo(value, seconds = 1.1) {
+    if (!this.el) return;
+    if (window.gsap) gsap.to(this.el, { volume: value, duration: seconds, ease: "power1.inOut", overwrite: true });
+    else this.el.volume = value;
+  },
+
+  setStage(stage) {
+    this.stage = stage;
+    if (this.enabled) this.fadeTo(this.targetGain(), 1.35);
+  },
+
+  setScene(index) {
+    this.stage = "scene";
+    this.sceneIndex = index;
+    if (this.enabled) this.fadeTo(this.targetGain(), 1.25);
+  },
+
+  setMenu(open) {
+    this.menuDucked = open;
+    if (this.enabled) this.fadeTo(this.targetGain(), open ? 0.9 : 1.15);
+  },
+
+  recoverFromBrowserInterruption() {
+    if (!this.hasStartedPlayback && !this.enabled) {
+      this.enable({ autoplay: true });
+    } else if (this.el?.paused) {
+      this.ensurePlaying();
+    }
+  },
+
+  updateButton() {
+    if (!this.button) return;
+    this.button.hidden = false;
+    this.button.setAttribute("aria-pressed", String(this.enabled));
+    this.button.setAttribute("aria-label", this.enabled ? "Mute ambient sound" : "Unmute ambient sound");
+    const label = $("span:last-child", this.button);
+    if (label) label.textContent = this.enabled ? "Sound on" : "Sound";
+  }
+};
+
+/* --------------------------------------------------------------------------
+   5. Hero film — silent frame-zero handoff and portrait tracking
    -------------------------------------------------------------------------- */
 
 const HeroFilm = {
   el:       $("#hero-video"),
   frame:    $("#hero-film"),
-  sound:    $("#hero-sound"),
   ready:    false,
   started:  false,
   ended:    false,
@@ -579,16 +799,25 @@ const HeroFilm = {
   tracking: null,
   wasPlaying: false,
 
+  silence() {
+    if (!this.el) return;
+    this.el.defaultMuted = true;
+    if (!this.el.muted) this.el.muted = true;
+    if (this.el.volume !== 0) this.el.volume = 0;
+  },
+
   bind() {
     if (this.bound || !this.el) return;
     this.bound = true;
+    this.silence();
+    this.el.addEventListener("volumechange", () => this.silence());
     this.el.addEventListener("ended", () => this.settle());
-    this.sound?.addEventListener("click", () => this.toggleSound());
   },
 
   prepare(onProgress = () => {}) {
     if (!this.el) return Promise.resolve(false);
     this.bind();
+    this.silence();
     if (this.el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
       this.ready = true;
       onProgress(1);
@@ -632,7 +861,7 @@ const HeroFilm = {
     if (!this.el || !this.ready || this.started) return;
     this.started = true;
     this.el.currentTime = 0;
-    this.el.muted = true;
+    this.silence();
 
     try {
       await this.el.play();
@@ -646,32 +875,12 @@ const HeroFilm = {
     gsap.set($(".hero-media"), { clearProps: "transform" });
     this.syncTracking(true);
     body.dataset.film = "playing";
-    gsap.to(this.el, { opacity: 1, duration: 0.08, ease: "none" });
-
-    /* Start the picture deterministically, then request the original soundtrack.
-       Browsers that disallow the unmute keep the film moving and expose a tiny control. */
-    this.el.muted = false;
-    setTimeout(() => {
-      if (!this.el || this.ended) return;
-      if (this.el.paused) {
-        this.el.muted = true;
-        this.el.play().catch(() => {});
-        body.dataset.filmAudio = "muted";
-        if (this.sound) this.sound.hidden = false;
-      } else {
-        body.dataset.filmAudio = "on";
-      }
-    }, 120);
-  },
-
-  toggleSound() {
-    if (!this.el || this.ended) return;
-    this.el.muted = !this.el.muted;
-    body.dataset.filmAudio = this.el.muted ? "muted" : "on";
-    if (!this.sound) return;
-    this.sound.setAttribute("aria-label", this.el.muted ? "Enable film sound" : "Mute film sound");
-    const label = $("span:last-child", this.sound);
-    if (label) label.textContent = this.el.muted ? "Sound" : "Sound on";
+    gsap.to(this.el, {
+      opacity: 1,
+      duration: 2.6,
+      ease: "power1.inOut",
+      overwrite: true
+    });
   },
 
   syncTracking(animate = false) {
@@ -704,7 +913,6 @@ const HeroFilm = {
       this.el.pause();
       gsap.set(this.el, { opacity: this.started ? 1 : 0 });
     }
-    if (this.sound) this.sound.hidden = true;
     body.dataset.film = this.started ? "ended" : "static";
     if (body.dataset.state === "ready" && SceneNavigation.currentScene === 0) {
       Atmosphere.start(Loader.heroSrc);
@@ -722,7 +930,6 @@ const HeroFilm = {
       body.dataset.film = "ended";
       this.syncTracking(false);
     }
-    if (this.sound) this.sound.hidden = true;
   },
 
   pause() {
@@ -734,13 +941,14 @@ const HeroFilm = {
 
   resume() {
     if (!this.el || this.ended || !this.wasPlaying || SceneNavigation.currentScene !== 0) return;
+    this.silence();
     this.el.play().catch(() => {});
     this.tracking?.resume();
   }
 };
 
 /* --------------------------------------------------------------------------
-   5. Atmosphere — final-frame coastal mist (paused after scene 0 exit)
+   6. Atmosphere — final-frame coastal mist (paused after scene 0 exit)
    -------------------------------------------------------------------------- */
 
 const Atmosphere = {
@@ -854,7 +1062,7 @@ const Atmosphere = {
 };
 
 /* --------------------------------------------------------------------------
-   5. Intro — one continuous atmospheric descent
+   7. Intro — one continuous atmospheric descent
    -------------------------------------------------------------------------- */
 
 const Intro = {
@@ -864,81 +1072,64 @@ const Intro = {
     const media = $(".hero-media");
     const stage = $(".hero-reveal");
     const haze  = $("#haze");
+    const far   = $(".cloud--far");
     const mid   = $(".cloud--mid");
     const near  = $(".cloud--near");
 
     body.dataset.state = "intro";
     performance.mark("benghazi-intro-start");
+    AmbientSound.setStage("intro");
+
+    const motion = Env.reducedMotion ? 0.32 : 1;
+    const scale = (value) => 1 + (value - 1) * motion;
+    const shift = (value) => value * motion;
 
     gsap.set(stage, { opacity: 1 });
-    gsap.set(media, { scale: experienceConfig.descentStartScale, yPercent: 1.3 });
+    gsap.set(media, { scale: scale(1.055), xPercent: shift(-0.8), yPercent: shift(3.4) });
     gsap.set($("#hero-video"), { opacity: 0 });
     HeroFilm.syncTracking(false);
 
-    if (Env.introMode === "lite")    return this.buildReduced(media, haze);
-    if (Env.mobile)                  return this.buildMobile(media, stage, haze, mid);
-    if (Env.tabletPortrait || Env.tabletLandscape) return this.buildTablet(media, stage, haze, mid);
-
     const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
 
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.4, scale: 1, xPercent: 0.5, yPercent: 0.2 })
-      .set(near, { opacity: 0.28, scale: 1, xPercent: -0.6, yPercent: -0.2 })
-      .to(haze,  { opacity: 0.95, duration: 0.55, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.7, duration: 0.55, ease: "power1.inOut" }, 0.55)
-      .to(haze,  { opacity: 0.18, duration: 1.1, ease: "power1.inOut" }, 1.1)
-      .to(haze,  { opacity: 0, duration: 0.88, ease: "power1.inOut" }, 2.2)
-      .to(near,  { scale: 1.085, xPercent: -1.5, yPercent: 2.4, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.1)
-      .to(mid,   { scale: 1.07, xPercent: 1.4, yPercent: 1.8, opacity: 0, duration: 2.9, ease: "power1.inOut" }, 0.18)
-      .to(media, { scale: 1, yPercent: 0, duration: 3.02, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.16);
+    tl.set(haze, { opacity: 1 })
+      .set(far,  { opacity: 0.44, scale: scale(1.018), xPercent: shift(-2.5), yPercent: shift(1.4) })
+      .set(mid,  { opacity: 0.64, scale: scale(1.035), xPercent: shift(-3.2), yPercent: shift(2.5) })
+      .set(near, { opacity: 0.76, scale: scale(1.06),  xPercent: shift(6),    yPercent: shift(4) })
 
-    this.appendReveal(tl, 3.55);
-    this.tl = tl;
-    return tl;
-  },
+      /* 0–4s: dense, almost contextless atmosphere establishes forward travel. */
+      .to(haze, { opacity: 0.97, duration: 4, ease: "none" }, 0)
+      .to(near, { opacity: 0.58, scale: scale(1.15), xPercent: shift(1), yPercent: shift(1), duration: 4, ease: "power1.inOut" }, 0)
+      .to(mid,  { opacity: 0.48, scale: scale(1.075), xPercent: shift(-1), yPercent: shift(0.8), duration: 4, ease: "power1.inOut" }, 0)
+      .to(far,  { opacity: 0.39, scale: scale(1.04), xPercent: shift(-1.6), yPercent: shift(0.8), duration: 4, ease: "power1.inOut" }, 0)
 
-  buildTablet(media, stage, haze, mid) {
-    const tl      = gsap.timeline({ onComplete: () => Experience.finishIntro() });
-    gsap.set(stage, { opacity: 1 });
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.38, scale: 1, xPercent: 0.5, yPercent: 0.2 })
-      .to(mid,   { scale: 1.07, xPercent: 1.35, yPercent: 1.8, opacity: 0, duration: 2.75, ease: "power1.inOut" }, 0.12)
-      .to(haze,  { opacity: 0.94, duration: 0.5, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.58, duration: 0.75, ease: "power1.inOut" }, 0.5)
-      .to(haze,  { opacity: 0.16, duration: 0.9, ease: "power1.inOut" }, 1.25)
-      .to(haze,  { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 2.92, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 3.08);
-    this.appendReveal(tl, 3.42, 0.82);
-    this.tl = tl;
-    return tl;
-  },
+      /* 4–8s: a second cloud plane crosses as warmer light begins to enter. */
+      .to(haze, { opacity: 0.82, duration: 4, ease: "power1.inOut" }, 4)
+      .to(near, { opacity: 0.68, scale: scale(1.23), xPercent: shift(-3), yPercent: shift(-1), duration: 4, ease: "power1.inOut" }, 4)
+      .to(mid,  { opacity: 0.56, scale: scale(1.115), xPercent: shift(1.2), yPercent: shift(-0.6), duration: 4, ease: "power1.inOut" }, 4)
+      .to(far,  { opacity: 0.34, scale: scale(1.062), xPercent: shift(-0.8), yPercent: shift(0.1), duration: 4, ease: "power1.inOut" }, 4)
 
-  buildMobile(media, stage, haze, mid) {
-    const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
-    gsap.set(stage, { opacity: 1 });
-    tl.set(haze, { opacity: 0.99 })
-      .set(mid,  { opacity: 0.34, scale: 1, xPercent: 0.4, yPercent: 0.2 })
-      .to(mid,   { scale: 1.06, xPercent: 1.2, yPercent: 1.6, opacity: 0, duration: 2.55, ease: "power1.inOut" }, 0.08)
-      .to(haze,  { opacity: 0.92, duration: 0.45, ease: "none" }, 0)
-      .to(haze,  { opacity: 0.62, duration: 0.7, ease: "power1.inOut" }, 0.45)
-      .to(haze,  { opacity: 0.16, duration: 1.0, ease: "power1.inOut" }, 1.15)
-      .to(haze,  { opacity: 0, duration: 0.75, ease: "power1.inOut" }, 2.15)
-      .to(media, { scale: 1, yPercent: 0, duration: 2.72, ease: "power1.inOut" }, 0)
-      .call(() => HeroFilm.start(), null, 2.86);
-    this.appendReveal(tl, 3.3, 0.76);
-    this.tl = tl;
-    return tl;
-  },
+      /* 8–12s: scale, exposure and direction converge on the film's first frame. */
+      .to(haze, { opacity: 0.55, duration: 4, ease: "power1.inOut" }, 8)
+      .to(near, { opacity: 0.34, scale: scale(1.32), xPercent: shift(-7), yPercent: shift(-4), duration: 4, ease: "power1.inOut" }, 8)
+      .to(mid,  { opacity: 0.36, scale: scale(1.165), xPercent: shift(2.8), yPercent: shift(-2.2), duration: 4, ease: "power1.inOut" }, 8)
+      .to(far,  { opacity: 0.27, scale: scale(1.085), xPercent: shift(0), yPercent: shift(-0.8), duration: 4, ease: "power1.inOut" }, 8)
+      .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 12.3, ease: "power1.inOut" }, 0)
 
-  buildReduced(media, haze) {
-    const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
-    tl.set(haze,  { opacity: 0.5 })
-      .set(media, { scale: 1, yPercent: 0 })
-      .to(haze, { opacity: 0, duration: 0.9, ease: "power1.inOut" }, 0.1)
-      .call(() => HeroFilm.start(), null, 0.82);
-    this.appendReveal(tl, 1.15, 0.55);
+      /* 12–16s: the real MP4 runs underneath the same frame-derived atmosphere. */
+      .call(() => AmbientSound.setStage("approach"), null, 8)
+      .call(() => HeroFilm.start(), null, 12.4)
+      .to(haze, { opacity: 0.26, duration: 4, ease: "power1.inOut" }, 12)
+      .to(near, { opacity: 0.1, scale: scale(1.4), xPercent: shift(-10), yPercent: shift(-6.5), duration: 4, ease: "power1.inOut" }, 12)
+      .to(mid,  { opacity: 0.19, scale: scale(1.21), xPercent: shift(3.8), yPercent: shift(-3.6), duration: 4, ease: "power1.inOut" }, 12)
+      .to(far,  { opacity: 0.19, scale: scale(1.11), xPercent: shift(0.6), yPercent: shift(-1.7), duration: 4, ease: "power1.inOut" }, 12)
+
+      /* 16–18.6s: the film becomes dominant and the tower naturally establishes. */
+      .to(haze, { opacity: 0, duration: 2.6, ease: "power1.inOut" }, 16)
+      .to(near, { opacity: 0, scale: scale(1.46), xPercent: shift(-12), yPercent: shift(-8), duration: 1.8, ease: "power1.inOut" }, 16)
+      .to(mid,  { opacity: 0, scale: scale(1.25), xPercent: shift(4.5), yPercent: shift(-4.5), duration: 2.25, ease: "power1.inOut" }, 16)
+      .to(far,  { opacity: 0, scale: scale(1.135), xPercent: shift(1), yPercent: shift(-2.4), duration: 2.4, ease: "power1.inOut" }, 16);
+
+    this.appendReveal(tl, 17.05, 0.9);
     this.tl = tl;
     return tl;
   },
@@ -968,7 +1159,7 @@ const Intro = {
 };
 
 /* --------------------------------------------------------------------------
-   6. SceneDeck — manage cinematic layer DOM
+   8. SceneDeck — manage cinematic layer DOM
    -------------------------------------------------------------------------- */
 
 const SceneDeck = {
@@ -1127,7 +1318,7 @@ const SceneDeck = {
 };
 
 /* --------------------------------------------------------------------------
-   7. Scene Navigation — one gesture = one scene, guaranteed
+   9. Scene Navigation — one gesture = one scene, guaranteed
    -------------------------------------------------------------------------- */
 
 const SceneNavigation = {
@@ -1217,6 +1408,7 @@ const SceneNavigation = {
     this.isTransitioning = true;
     this.dismissCue();
     this.stopAmbient();
+    AmbientSound.setScene(target);
     SceneDeck.load(target);
 
     /* Safety: if transition never completes, force-unlock after 2× duration + 800ms */
@@ -1538,7 +1730,7 @@ const SceneNavigation = {
 };
 
 /* --------------------------------------------------------------------------
-   8. Interface — HUD, menu (built dynamically from scene config)
+   10. Interface — HUD, menu (built dynamically from scene config)
    -------------------------------------------------------------------------- */
 
 const Interface = {
@@ -1611,6 +1803,7 @@ const Interface = {
     this.menu.dataset.open = "true";
     this.menu.setAttribute("aria-hidden", "false");
     this.trigger.setAttribute("aria-expanded", "true");
+    AmbientSound.setMenu(true);
     body.style.overflow = "hidden";
     const first = $(".menu__link", this.menu);
     requestAnimationFrame(() => first && first.focus());
@@ -1620,6 +1813,7 @@ const Interface = {
     this.menu.dataset.open = "false";
     this.menu.setAttribute("aria-hidden", "true");
     this.trigger.setAttribute("aria-expanded", "false");
+    AmbientSound.setMenu(false);
     if (body.dataset.state === "ready") body.style.overflow = "hidden";
     if (restoreFocus && this.lastFocus) this.lastFocus.focus();
   },
@@ -1635,17 +1829,15 @@ const Interface = {
 };
 
 /* --------------------------------------------------------------------------
-   9. Boot
+   11. Boot
    -------------------------------------------------------------------------- */
 
 const Experience = {
-  /* Stored refs to the "impatient" intro listeners so we can clean them up */
-  _introListeners: null,
-
   async start() {
     SceneDeck.render();
     this.applyFraming();
     Interface.init();
+    AmbientSound.init();
 
     await Loader.run();
     Loader.dismiss();
@@ -1670,53 +1862,34 @@ const Experience = {
   finishIntro() {
     if (body.dataset.state === "ready") return;
 
-    /* 1. Remove all intro-only event listeners */
-    if (this._introListeners) {
-      window.removeEventListener("wheel",     this._introListeners.wheel);
-      window.removeEventListener("touchmove", this._introListeners.touchmove);
-      window.removeEventListener("keydown",   this._introListeners.keydown);
-      this._introListeners = null;
-    }
-
-    /* 2. Kill the intro timeline if somehow still alive */
+    /* 1. Kill the intro timeline if somehow still alive */
     if (Intro.tl && Intro.tl.isActive()) Intro.tl.kill();
 
-    /* 3. Remove the cloud layer and haze — no longer needed */
+    /* 2. Remove the cloud layer and haze — no longer needed */
     const flythrough = $("#flythrough");
     if (flythrough) flythrough.remove();
     const haze = $("#haze");
     if (haze) haze.remove();
 
-    /* 4. Set ready state */
+    /* 3. Set ready state */
     body.dataset.state = "ready";
     performance.mark("benghazi-interactive");
+    AmbientSound.setScene(0);
 
-    /* 5. Guarantee no overflow/touch-action lock remains */
+    /* 4. Guarantee no overflow/touch-action lock remains */
     document.documentElement.style.touchAction = "none";
     document.body.style.touchAction            = "none";
     document.body.style.overflow               = "hidden";
     window.scrollTo(0, 0);
 
-    /* 6. Start navigation */
+    /* 5. Start navigation */
     SceneNavigation.build();
 
-    /* 7. The live film keeps the hero moving; final mist begins on its end frame. */
+    /* 6. The live film keeps the hero moving; final mist begins on its end frame. */
     if (!HeroFilm.started || HeroFilm.ended) Atmosphere.start(Loader.heroSrc);
   },
 
   bindGlobal() {
-    /* Impatient listeners: skip intro on any user gesture.
-       These are removed inside finishIntro() so they never interfere post-intro. */
-    const impatient = (e) => {
-      if (body.dataset.state !== "intro") return;
-      if (e.type === "keydown" && !["Enter", " ", "ArrowDown", "PageDown", "Escape"].includes(e.key)) return;
-      Intro.skip();
-    };
-    this._introListeners = { wheel: impatient, touchmove: impatient, keydown: impatient };
-    window.addEventListener("wheel",     impatient, { passive: true });
-    window.addEventListener("touchmove", impatient, { passive: true });
-    window.addEventListener("keydown",   impatient);
-
     /* Visibility */
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
@@ -1726,6 +1899,7 @@ const Experience = {
       } else {
         Atmosphere.resume();
         HeroFilm.resume();
+        AmbientSound.recoverFromBrowserInterruption();
         if (Intro.tl) Intro.tl.resume();
       }
     });
@@ -1778,6 +1952,7 @@ if (window.gsap) {
   Experience.start();
 } else {
   /* No GSAP: static fallback */
+  AmbientSound.init();
   SceneDeck.render();
   Experience.applyFraming();
   const heroImg = $("#hero-image");
