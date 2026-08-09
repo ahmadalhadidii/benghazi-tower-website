@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic4" type="image/webp">
-<link rel="stylesheet" href="styles.css?v=20260809-cinematic4">
+<link rel="preload" as="image" href="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic5" type="image/webp">
+<link rel="stylesheet" href="styles.css?v=20260809-cinematic5">
 </head>
 
 <body data-state="loading">
@@ -58,7 +58,7 @@
             <img
               class="hero-media__img js-hero-src"
               id="hero-image"
-              src="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic4"
+              src="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic5"
               alt="Benghazi Tower emerging through warm coastal mist above the Mediterranean waterfront."
               decoding="async"
               fetchpriority="high">
@@ -69,9 +69,9 @@
               playsinline
               muted
               preload="auto"
-              poster="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic4"
+              poster="assets/video/benghazi-tower-arrival-poster.webp?v=20260809-cinematic5"
               aria-hidden="true">
-              <source src="assets/video/benghazi-tower-arrival.mp4?v=20260809-cinematic4" type="video/mp4">
+              <source src="assets/video/benghazi-tower-arrival.mp4?v=20260809-cinematic5" type="video/mp4">
             </video>
           </div>
 
@@ -103,7 +103,7 @@
 
 <!-- One continuous environmental soundtrack; the film remains picture-only. -->
 <audio id="ambient-audio" preload="auto" loop playsinline aria-hidden="true">
-  <source src="assets/audio/benghazi-ambient.mp3?v=20260809-cinematic4" type="audio/mpeg">
+  <source src="assets/audio/benghazi-ambient.mp3?v=20260809-cinematic5" type="audio/mpeg">
 </audio>
 
 <!-- ── Interface ─────────────────────────────────────────────────────────── -->
@@ -115,9 +115,9 @@
     <span class="hud__menu-glyph" aria-hidden="true"><i></i><i></i></span>
   </button>
 
-  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Enable ambient sound" aria-pressed="false">
+  <button class="hud__sound u-label" id="hero-sound" type="button" aria-label="Mute ambient sound" aria-pressed="true">
     <span class="hud__sound-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span>Sound</span>
+    <span>Sound on</span>
   </button>
 
   <button class="hud__cue u-label" id="hud-cue" type="button" aria-label="Navigate to next scene">
@@ -147,6 +147,6 @@
 </nav>
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script defer src="script.js?v=20260809-cinematic4"></script>
+<script defer src="script.js?v=20260809-cinematic5"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
 test("updated cinematic assets use one stable cache version", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   for (const asset of ["styles.css", "script.js", "benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
-    expect(html).toContain(`${asset}?v=20260809-cinematic4`);
+    expect(html).toContain(`${asset}?v=20260809-cinematic5`);
   }
 });
 
@@ -41,7 +41,7 @@ async function captureArrival(page, viewport, name) {
       return style.display !== "none" && Number(style.opacity) > 0.15;
     });
     return visibleLayers.length === expectedLayers;
-  }, viewport.width > 1200 ? 3 : 2, { timeout: 3000 });
+  }, 3, { timeout: 3000 });
   const readings = [];
   const capture = async (at) => {
     readings.push(await page.evaluate((t) => {
@@ -75,7 +75,14 @@ async function captureArrival(page, viewport, name) {
         haze: document.querySelector("#haze") ? Number(getComputedStyle(document.querySelector("#haze")).opacity) : 0,
         cloudLayers: [...document.querySelectorAll(".cloud")].map((el) => {
           const style = getComputedStyle(el);
-          return { display: style.display, opacity: Number(style.opacity), backgroundImage: style.backgroundImage };
+          const matrix = style.transform === "none" ? null : new DOMMatrixReadOnly(style.transform);
+          return {
+            display: style.display,
+            opacity: Number(style.opacity),
+            backgroundImage: style.backgroundImage,
+            filter: style.filter,
+            scale: matrix ? Math.hypot(matrix.a, matrix.b) : 1
+          };
         }),
         mist: [...document.querySelectorAll(".hero-mist")].map((el) => Number(getComputedStyle(el).opacity)),
         hud: Number(getComputedStyle(document.querySelector(".hud")).opacity),
@@ -211,14 +218,19 @@ for (const [name, viewport] of [
   ["tablet-landscape-1024x768", { width: 1024, height: 768 }],
   ["tablet-portrait-820x1180", { width: 820, height: 1180 }],
   ["tablet-landscape-1180x820", { width: 1180, height: 820 }],
-  ["desktop-1366x768", { width: 1366, height: 768 }]
+  ["desktop-1366x768", { width: 1366, height: 768 }],
+  ["desktop-1440x900", { width: 1440, height: 900 }],
+  ["desktop-1536x864", { width: 1536, height: 864 }],
+  ["desktop-1920x1080", { width: 1920, height: 1080 }]
 ]) {
   test(`${name} arrival preserves the cinematic handoff`, async ({ page }) => {
     test.setTimeout(70000);
     const result = await captureArrival(page, viewport, name);
     const visibleAtmosphere = result.readings[0].cloudLayers.filter((layer) => layer.display !== "none" && layer.opacity > 0.15);
-    expect(visibleAtmosphere.length).toBe(viewport.width > 1200 ? 3 : 2);
-    expect(visibleAtmosphere.every((layer) => layer.backgroundImage.includes("benghazi-tower-arrival-poster.webp"))).toBeTruthy();
+    expect(visibleAtmosphere.length).toBe(3);
+    expect(visibleAtmosphere.every((layer) => !layer.backgroundImage.includes("url("))).toBeTruthy();
+    expect(visibleAtmosphere.every((layer) => layer.filter === "none")).toBeTruthy();
+    expect(Math.max(...visibleAtmosphere.map((layer) => layer.scale))).toBeLessThanOrEqual(1.03);
     expect(result.readings[0].heroScale).toBeGreaterThan(1);
     expect(result.readings[0].heroScale).toBeLessThanOrEqual(1.06);
     expect(result.readings[1].heroTransform).not.toEqual(result.readings[0].heroTransform);
@@ -236,6 +248,42 @@ for (const [name, viewport] of [
     }
   });
 }
+
+test("retina-like desktop keeps the atmosphere procedural through the film handoff", async ({ browser }) => {
+  test.setTimeout(40000);
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2
+  });
+  const page = await context.newPage();
+  await page.goto("http://127.0.0.1:4173", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.body.dataset.state === "intro" && Intro.tl?.isActive(), null, { timeout: 12000 });
+  const firstFrame = await page.evaluate(() => ({
+    dpr: window.devicePixelRatio,
+    layers: [...document.querySelectorAll(".cloud")].map((element) => {
+      const style = getComputedStyle(element);
+      const matrix = new DOMMatrixReadOnly(style.transform);
+      return {
+        image: style.backgroundImage,
+        filter: style.filter,
+        scale: Math.hypot(matrix.a, matrix.b)
+      };
+    })
+  }));
+  expect(firstFrame.dpr).toBe(2);
+  expect(firstFrame.layers).toHaveLength(3);
+  expect(firstFrame.layers.every((layer) => !layer.image.includes("url(") && layer.filter === "none")).toBeTruthy();
+  expect(Math.max(...firstFrame.layers.map((layer) => layer.scale))).toBeLessThanOrEqual(1.03);
+  await page.waitForFunction(() => Intro.tl.time() >= 13.5, null, { timeout: 20000 });
+  const handoff = await page.evaluate(() => {
+    const video = document.querySelector("#hero-video");
+    return { readyState: video.readyState, currentTime: video.currentTime, opacity: Number(getComputedStyle(video).opacity) };
+  });
+  expect(handoff.readyState).toBeGreaterThanOrEqual(2);
+  expect(handoff.currentTime).toBeGreaterThan(0.2);
+  expect(handoff.opacity).toBeGreaterThan(0.05);
+  await context.close();
+});
 
 test("master arrival stays active for the full cinematic journey", async ({ page }) => {
   test.setTimeout(65000);

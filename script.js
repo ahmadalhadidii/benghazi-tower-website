@@ -777,11 +777,12 @@ const AmbientSound = {
 
   updateButton() {
     if (!this.button) return;
+    const intendedOn = this.enabled || this.starting || body.dataset.audio === "starting";
     this.button.hidden = false;
-    this.button.setAttribute("aria-pressed", String(this.enabled));
-    this.button.setAttribute("aria-label", this.enabled ? "Mute ambient sound" : "Unmute ambient sound");
+    this.button.setAttribute("aria-pressed", String(intendedOn));
+    this.button.setAttribute("aria-label", intendedOn ? "Mute ambient sound" : "Unmute ambient sound");
     const label = $("span:last-child", this.button);
-    if (label) label.textContent = this.enabled ? "Sound on" : "Sound";
+    if (label) label.textContent = intendedOn ? "Sound on" : "Sound";
   }
 };
 
@@ -798,6 +799,7 @@ const HeroFilm = {
   bound:    false,
   tracking: null,
   wasPlaying: false,
+  frameReady: false,
 
   silence() {
     if (!this.el) return;
@@ -865,6 +867,7 @@ const HeroFilm = {
 
     try {
       await this.el.play();
+      await this.waitForDecodedFrame();
     } catch (error) {
       body.dataset.film = "static";
       this.started = false;
@@ -880,6 +883,26 @@ const HeroFilm = {
       duration: 2.6,
       ease: "power1.inOut",
       overwrite: true
+    });
+  },
+
+  waitForDecodedFrame() {
+    if (!this.el || this.frameReady) return Promise.resolve();
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        this.frameReady = true;
+        resolve();
+      };
+      const timeout = setTimeout(finish, 1200);
+      if (typeof this.el.requestVideoFrameCallback === "function") {
+        this.el.requestVideoFrameCallback(finish);
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(finish));
+      }
     });
   },
 
@@ -1067,6 +1090,7 @@ const Atmosphere = {
 
 const Intro = {
   tl: null,
+  prepared: false,
 
   build() {
     const media = $(".hero-media");
@@ -1077,7 +1101,6 @@ const Intro = {
     const near  = $(".cloud--near");
 
     body.dataset.state = "intro";
-    performance.mark("benghazi-intro-start");
     AmbientSound.setStage("intro");
 
     const motion = Env.reducedMotion ? 0.32 : 1;
@@ -1085,53 +1108,61 @@ const Intro = {
     const shift = (value) => value * motion;
 
     gsap.set(stage, { opacity: 1 });
-    gsap.set(media, { scale: scale(1.055), xPercent: shift(-0.8), yPercent: shift(3.4) });
+    gsap.set(media, { scale: scale(1.025), xPercent: shift(-0.4), yPercent: shift(1.4), force3D: true });
     gsap.set($("#hero-video"), { opacity: 0 });
     HeroFilm.syncTracking(false);
 
-    const tl = gsap.timeline({ onComplete: () => Experience.finishIntro() });
+    /* Prepare the complete first cinematic frame while the loader still covers it. */
+    gsap.set(haze, { opacity: 1 });
+    gsap.set(far,  { opacity: 0.48, scale: scale(1.008), xPercent: shift(-1.8), yPercent: shift(0.8), force3D: true });
+    gsap.set(mid,  { opacity: 0.62, scale: scale(1.012), xPercent: shift(-2.2), yPercent: shift(1.3), force3D: true });
+    gsap.set(near, { opacity: 0.7,  scale: scale(1.018), xPercent: shift(3.2),  yPercent: shift(2),   force3D: true });
 
-    tl.set(haze, { opacity: 1 })
-      .set(far,  { opacity: 0.44, scale: scale(1.018), xPercent: shift(-2.5), yPercent: shift(1.4) })
-      .set(mid,  { opacity: 0.64, scale: scale(1.035), xPercent: shift(-3.2), yPercent: shift(2.5) })
-      .set(near, { opacity: 0.76, scale: scale(1.06),  xPercent: shift(6),    yPercent: shift(4) })
+    const tl = gsap.timeline({ paused: true, onComplete: () => Experience.finishIntro() });
 
-      /* 0–4s: dense, almost contextless atmosphere establishes forward travel. */
+    tl/* 0–4s: dense, continuous atmosphere establishes forward travel. */
       .to(haze, { opacity: 0.97, duration: 4, ease: "none" }, 0)
-      .to(near, { opacity: 0.58, scale: scale(1.15), xPercent: shift(1), yPercent: shift(1), duration: 4, ease: "power1.inOut" }, 0)
-      .to(mid,  { opacity: 0.48, scale: scale(1.075), xPercent: shift(-1), yPercent: shift(0.8), duration: 4, ease: "power1.inOut" }, 0)
-      .to(far,  { opacity: 0.39, scale: scale(1.04), xPercent: shift(-1.6), yPercent: shift(0.8), duration: 4, ease: "power1.inOut" }, 0)
+      .to(near, { opacity: 0.58, scale: scale(1.038), xPercent: shift(1),    yPercent: shift(0.7), duration: 4, ease: "power1.inOut" }, 0)
+      .to(mid,  { opacity: 0.52, scale: scale(1.026), xPercent: shift(-0.8), yPercent: shift(0.5), duration: 4, ease: "power1.inOut" }, 0)
+      .to(far,  { opacity: 0.42, scale: scale(1.017), xPercent: shift(-1.2), yPercent: shift(0.5), duration: 4, ease: "power1.inOut" }, 0)
 
-      /* 4–8s: a second cloud plane crosses as warmer light begins to enter. */
+      /* 4–8s: overlap shifts as warmer light begins to enter. */
       .to(haze, { opacity: 0.82, duration: 4, ease: "power1.inOut" }, 4)
-      .to(near, { opacity: 0.68, scale: scale(1.23), xPercent: shift(-3), yPercent: shift(-1), duration: 4, ease: "power1.inOut" }, 4)
-      .to(mid,  { opacity: 0.56, scale: scale(1.115), xPercent: shift(1.2), yPercent: shift(-0.6), duration: 4, ease: "power1.inOut" }, 4)
-      .to(far,  { opacity: 0.34, scale: scale(1.062), xPercent: shift(-0.8), yPercent: shift(0.1), duration: 4, ease: "power1.inOut" }, 4)
+      .to(near, { opacity: 0.66, scale: scale(1.058), xPercent: shift(-1.5), yPercent: shift(-0.8), duration: 4, ease: "power1.inOut" }, 4)
+      .to(mid,  { opacity: 0.58, scale: scale(1.04),  xPercent: shift(0.8),  yPercent: shift(-0.4), duration: 4, ease: "power1.inOut" }, 4)
+      .to(far,  { opacity: 0.38, scale: scale(1.029), xPercent: shift(-0.5), yPercent: shift(0), duration: 4, ease: "power1.inOut" }, 4)
 
       /* 8–12s: scale, exposure and direction converge on the film's first frame. */
       .to(haze, { opacity: 0.55, duration: 4, ease: "power1.inOut" }, 8)
-      .to(near, { opacity: 0.34, scale: scale(1.32), xPercent: shift(-7), yPercent: shift(-4), duration: 4, ease: "power1.inOut" }, 8)
-      .to(mid,  { opacity: 0.36, scale: scale(1.165), xPercent: shift(2.8), yPercent: shift(-2.2), duration: 4, ease: "power1.inOut" }, 8)
-      .to(far,  { opacity: 0.27, scale: scale(1.085), xPercent: shift(0), yPercent: shift(-0.8), duration: 4, ease: "power1.inOut" }, 8)
+      .to(near, { opacity: 0.38, scale: scale(1.078), xPercent: shift(-4), yPercent: shift(-2.5), duration: 4, ease: "power1.inOut" }, 8)
+      .to(mid,  { opacity: 0.4,  scale: scale(1.054), xPercent: shift(2),  yPercent: shift(-1.5), duration: 4, ease: "power1.inOut" }, 8)
+      .to(far,  { opacity: 0.3,  scale: scale(1.04),  xPercent: shift(0),  yPercent: shift(-0.6), duration: 4, ease: "power1.inOut" }, 8)
       .to(media, { scale: 1, xPercent: 0, yPercent: 0, duration: 12.3, ease: "power1.inOut" }, 0)
 
-      /* 12–16s: the real MP4 runs underneath the same frame-derived atmosphere. */
+      /* 12–16s: the decoded MP4 runs underneath the continuous atmosphere. */
       .call(() => AmbientSound.setStage("approach"), null, 8)
-      .call(() => HeroFilm.start(), null, 12.4)
+      .call(() => HeroFilm.start(), null, 11.8)
       .to(haze, { opacity: 0.26, duration: 4, ease: "power1.inOut" }, 12)
-      .to(near, { opacity: 0.1, scale: scale(1.4), xPercent: shift(-10), yPercent: shift(-6.5), duration: 4, ease: "power1.inOut" }, 12)
-      .to(mid,  { opacity: 0.19, scale: scale(1.21), xPercent: shift(3.8), yPercent: shift(-3.6), duration: 4, ease: "power1.inOut" }, 12)
-      .to(far,  { opacity: 0.19, scale: scale(1.11), xPercent: shift(0.6), yPercent: shift(-1.7), duration: 4, ease: "power1.inOut" }, 12)
+      .to(near, { opacity: 0.14, scale: scale(1.098), xPercent: shift(-6.5), yPercent: shift(-4.4), duration: 4, ease: "power1.inOut" }, 12)
+      .to(mid,  { opacity: 0.22, scale: scale(1.068), xPercent: shift(3),    yPercent: shift(-2.6), duration: 4, ease: "power1.inOut" }, 12)
+      .to(far,  { opacity: 0.21, scale: scale(1.052), xPercent: shift(0.5),  yPercent: shift(-1.3), duration: 4, ease: "power1.inOut" }, 12)
 
       /* 16–18.6s: the film becomes dominant and the tower naturally establishes. */
       .to(haze, { opacity: 0, duration: 2.6, ease: "power1.inOut" }, 16)
-      .to(near, { opacity: 0, scale: scale(1.46), xPercent: shift(-12), yPercent: shift(-8), duration: 1.8, ease: "power1.inOut" }, 16)
-      .to(mid,  { opacity: 0, scale: scale(1.25), xPercent: shift(4.5), yPercent: shift(-4.5), duration: 2.25, ease: "power1.inOut" }, 16)
-      .to(far,  { opacity: 0, scale: scale(1.135), xPercent: shift(1), yPercent: shift(-2.4), duration: 2.4, ease: "power1.inOut" }, 16);
+      .to(near, { opacity: 0, scale: scale(1.115), xPercent: shift(-8), yPercent: shift(-5.4), duration: 1.8, ease: "power1.inOut" }, 16)
+      .to(mid,  { opacity: 0, scale: scale(1.082), xPercent: shift(3.8), yPercent: shift(-3.4), duration: 2.25, ease: "power1.inOut" }, 16)
+      .to(far,  { opacity: 0, scale: scale(1.062), xPercent: shift(0.8), yPercent: shift(-1.8), duration: 2.4, ease: "power1.inOut" }, 16);
 
     this.appendReveal(tl, 17.05, 0.9);
     this.tl = tl;
+    this.prepared = true;
     return tl;
+  },
+
+  play() {
+    if (!this.tl || !this.prepared) return;
+    performance.mark("benghazi-intro-start");
+    this.tl.play(0);
   },
 
   appendReveal(tl, at, pace = 1) {
@@ -1834,15 +1865,17 @@ const Interface = {
 
 const Experience = {
   async start() {
+    /* The one global soundtrack gets the earliest possible audible attempt. */
+    AmbientSound.init();
     SceneDeck.render();
     this.applyFraming();
     Interface.init();
-    AmbientSound.init();
 
     await Loader.run();
-    Loader.dismiss();
-    this.bindGlobal();
     Intro.build();
+    this.bindGlobal();
+    await Loader.dismiss();
+    Intro.play();
   },
 
   applyFraming() {
