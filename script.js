@@ -2553,6 +2553,133 @@ const ProjectFilm = {
   }
 };
 
+const PROJECT_PDF = "assets/docs/libya-tower-presentation.pdf";
+
+const ProjectPresentation = {
+  overlay:     $("#project-presentation-overlay"),
+  trigger:     $("#hud-presentation"),
+  close:       $("#project-presentation-close"),
+  viewer:      $("#project-presentation-viewer"),
+  lastFocus:   null,
+  isOpen:      false,
+  initialized: false,
+  cleanupTimer: null,
+  previousTouchAction: null,
+
+  init() {
+    if (this.initialized || !this.overlay || !this.trigger || !this.close || !this.viewer) return;
+    this.initialized = true;
+
+    this.trigger.addEventListener("click", () => this.open());
+    this.close.addEventListener("click", () => this.hide());
+    this.overlay.addEventListener("click", (event) => {
+      if (event.target === this.overlay) this.hide();
+    });
+
+    ["wheel", "touchstart", "touchmove", "touchend"].forEach((type) => {
+      this.overlay.addEventListener(type, (event) => event.stopPropagation(), {
+        passive: type !== "wheel"
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!this.isOpen) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.hide();
+      } else if (event.key === "Tab") {
+        this.trapFocus(event);
+      }
+      event.stopImmediatePropagation();
+    });
+  },
+
+  open() {
+    if (this.isOpen || body.dataset.state !== "ready" || ProjectFilm.isOpen) return;
+    this.isOpen = true;
+    this.lastFocus = document.activeElement;
+    clearTimeout(this.cleanupTimer);
+
+    this.previousTouchAction = {
+      root: document.documentElement.style.touchAction,
+      body: document.body.style.touchAction
+    };
+    document.documentElement.style.touchAction = "auto";
+    document.body.style.touchAction = "auto";
+    body.dataset.presentationOpen = "true";
+
+    this.mountViewer();
+    this.overlay.inert = false;
+    this.overlay.dataset.open = "true";
+    this.overlay.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => this.close.focus());
+  },
+
+  hide() {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    body.dataset.presentationOpen = "false";
+    this.overlay.inert = true;
+    this.overlay.dataset.open = "false";
+    this.overlay.setAttribute("aria-hidden", "true");
+
+    if (this.previousTouchAction) {
+      document.documentElement.style.touchAction = this.previousTouchAction.root;
+      document.body.style.touchAction = this.previousTouchAction.body;
+      this.previousTouchAction = null;
+    }
+
+    this.cleanupTimer = setTimeout(() => this.unmountViewer(), Env.reducedMotion ? 0 : 300);
+    const focusTarget = this.lastFocus && document.contains(this.lastFocus)
+      ? this.lastFocus
+      : this.trigger;
+    requestAnimationFrame(() => focusTarget.focus());
+  },
+
+  mountViewer() {
+    this.unmountViewer();
+    const pdf = document.createElement("object");
+    pdf.className = "presentation-window__pdf";
+    pdf.type = "application/pdf";
+    pdf.data = PROJECT_PDF;
+    pdf.setAttribute("aria-label", "Libya Tower project presentation PDF");
+
+    const fallback = document.createElement("div");
+    fallback.className = "presentation-window__fallback";
+    const message = document.createElement("p");
+    message.textContent = "This browser cannot display the presentation inline.";
+    const link = document.createElement("a");
+    link.className = "presentation-window__fallback-link u-label";
+    link.href = PROJECT_PDF;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Open project presentation";
+    fallback.append(message, link);
+    pdf.appendChild(fallback);
+    this.viewer.appendChild(pdf);
+  },
+
+  unmountViewer() {
+    const pdf = $(".presentation-window__pdf", this.viewer);
+    if (pdf) pdf.removeAttribute("data");
+    this.viewer.replaceChildren();
+  },
+
+  trapFocus(event) {
+    const items = $$("a, button", this.overlay).filter((el) => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+};
+
 const Interface = {
   menu:    $("#menu"),
   trigger: $("#menu-trigger"),
@@ -2685,6 +2812,7 @@ const Experience = {
     this.applyFraming();
     Interface.init();
     ProjectFilm.init();
+    ProjectPresentation.init();
 
     await Loader.run();
     Intro.build();
@@ -2836,6 +2964,7 @@ if (window.gsap) {
   $(".hero-type__subtitle").style.opacity = 1;
   Interface.init();
   ProjectFilm.init();
+  ProjectPresentation.init();
   Interface.buildMenu();
   SceneNavigation.build();
   SceneNavigation.updateHUD(0);

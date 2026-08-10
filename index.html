@@ -145,6 +145,31 @@
   </button>
 </section>
 
+<!-- Project presentation; the PDF viewer is created only when requested. -->
+<section
+  class="presentation-overlay"
+  id="project-presentation-overlay"
+  data-open="false"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="project-presentation-title"
+  aria-hidden="true"
+  inert>
+  <div class="presentation-window" role="document">
+    <header class="presentation-window__bar">
+      <p class="presentation-window__title u-label" id="project-presentation-title">
+        Libya Tower <span aria-hidden="true">—</span> Project Presentation
+      </p>
+      <button
+        class="presentation-window__close"
+        id="project-presentation-close"
+        type="button"
+        aria-label="Close project presentation">×</button>
+    </header>
+    <div class="presentation-window__viewer" id="project-presentation-viewer"></div>
+  </div>
+</section>
+
 <!-- ── Interface ─────────────────────────────────────────────────────────── -->
 <div class="hud">
   <p class="hud__wordmark u-label">Benghazi Tower</p>
@@ -167,6 +192,11 @@
   <button class="hud__film u-label" id="hud-film" type="button" aria-haspopup="dialog" aria-controls="project-film-overlay">
     <span class="hud__film-mark" aria-hidden="true"></span>
     <span>FILM</span>
+  </button>
+
+  <button class="hud__presentation u-label" id="hud-presentation" type="button" aria-haspopup="dialog" aria-controls="project-presentation-overlay">
+    <span class="hud__presentation-mark" aria-hidden="true"></span>
+    <span>PRESENTATION</span>
   </button>
 
   <button class="hud__cue u-label" id="hud-cue" type="button" aria-label="Navigate to next scene">
