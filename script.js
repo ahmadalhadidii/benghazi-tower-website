@@ -2554,6 +2554,7 @@ const ProjectFilm = {
 };
 
 const PROJECT_PDF = "assets/docs/libya-tower-presentation.pdf";
+const PDFJS_ROOT = "assets/vendor/pdfjs/";
 
 const ProjectPresentation = {
   overlay:     $("#project-presentation-overlay"),
@@ -2565,6 +2566,16 @@ const ProjectPresentation = {
   initialized: false,
   cleanupTimer: null,
   pageLock:    null,
+  libraryPromise: null,
+  loadingTask: null,
+  pdfDocument: null,
+  pageStates: [],
+  renderQueue: [],
+  activeRenders: 0,
+  renderObserver: null,
+  resizeObserver: null,
+  resizeTimer: null,
+  generation: 0,
 
   init() {
     if (this.initialized || !this.overlay || !this.trigger || !this.close || !this.viewer) return;
@@ -2596,11 +2607,6 @@ const ProjectPresentation = {
 
   open() {
     if (this.isOpen || body.dataset.state !== "ready" || ProjectFilm.isOpen) return;
-    if (!this.canEmbedInline()) {
-      this.openNativeViewer();
-      return;
-    }
-
     this.isOpen = true;
     this.lastFocus = document.activeElement;
     clearTimeout(this.cleanupTimer);
@@ -2622,6 +2628,7 @@ const ProjectPresentation = {
     this.overlay.dataset.open = "false";
     this.overlay.setAttribute("aria-hidden", "true");
 
+    this.stopPresentation();
     this.unlockPage();
 
     this.cleanupTimer = setTimeout(() => this.unmountViewer(), Env.reducedMotion ? 0 : 300);
@@ -2633,53 +2640,307 @@ const ProjectPresentation = {
 
   mountViewer() {
     this.unmountViewer();
-    const pdf = document.createElement("object");
-    pdf.className = "presentation-window__pdf";
-    pdf.type = "application/pdf";
-    pdf.data = PROJECT_PDF;
-    pdf.setAttribute("aria-label", "Libya Tower project presentation PDF");
-    pdf.addEventListener("error", () => this.showInlineFallback(), { once: true });
-    pdf.appendChild(this.buildFallback());
-    this.viewer.appendChild(pdf);
+    const token = ++this.generation;
+    const loading = document.createElement("div");
+    loading.className = "presentation-window__loading u-label";
+    loading.setAttribute("role", "status");
+    loading.setAttribute("aria-live", "polite");
+    loading.textContent = "Loading presentation";
+
+    const pages = document.createElement("div");
+    pages.className = "presentation-window__pages";
+    pages.setAttribute("aria-busy", "true");
+    pages.setAttribute("aria-label", "Libya Tower presentation pages");
+    this.viewer.replaceChildren(loading, pages);
+    this.loadPresentation(token, loading, pages);
   },
 
-  canEmbedInline() {
-    const ua = navigator.userAgent || "";
-    const iOS = /iPad|iPhone|iPod/i.test(ua) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const android = /Android/i.test(ua);
-    if (iOS || android || navigator.userAgentData?.mobile) return false;
-    if ("pdfViewerEnabled" in navigator) return navigator.pdfViewerEnabled === true;
-    return Boolean(navigator.mimeTypes?.["application/pdf"]?.enabledPlugin);
-  },
-
-  openNativeViewer() {
-    const opened = window.open(PROJECT_PDF, "_blank");
-    if (opened) {
-      try { opened.opener = null; } catch (_) {}
-      return;
+  async loadPdfLibrary() {
+    if (!this.libraryPromise) {
+      const moduleUrl = new URL(`${PDFJS_ROOT}pdf.min.mjs`, document.baseURI).href;
+      this.libraryPromise = import(moduleUrl).then((pdfjs) => {
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          `${PDFJS_ROOT}pdf.worker.min.mjs`,
+          document.baseURI
+        ).href;
+        return pdfjs;
+      }).catch((error) => {
+        this.libraryPromise = null;
+        throw error;
+      });
     }
-    window.location.assign(PROJECT_PDF);
+    return this.libraryPromise;
   },
 
-  buildFallback() {
-    const fallback = document.createElement("div");
-    fallback.className = "presentation-window__fallback";
+  async loadPresentation(token, loading, pages) {
+    try {
+      const pdfjs = await this.loadPdfLibrary();
+      if (!this.isCurrent(token)) return;
+
+      const assetUrl = (folder) => new URL(`${PDFJS_ROOT}${folder}/`, document.baseURI).href;
+      this.loadingTask = pdfjs.getDocument({
+        url: PROJECT_PDF,
+        cMapUrl: assetUrl("cmaps"),
+        cMapPacked: true,
+        iccUrl: assetUrl("iccs"),
+        standardFontDataUrl: assetUrl("standard_fonts"),
+        wasmUrl: assetUrl("wasm"),
+        useWasm: true
+      });
+      const pdf = await this.loadingTask.promise;
+      if (!this.isCurrent(token)) {
+        pdf.destroy().catch(() => {});
+        return;
+      }
+
+      this.pdfDocument = pdf;
+      this.setupRendering(token);
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        if (!this.isCurrent(token)) return;
+        try {
+          const page = await pdf.getPage(pageNumber);
+          if (!this.isCurrent(token)) return;
+          const viewport = page.getViewport({ scale: 1 });
+          const state = this.createPageState(page, pageNumber, viewport, pages, token);
+          this.pageStates.push(state);
+          this.renderObserver.observe(state.holder);
+          if (pageNumber === 1) loading.remove();
+        } catch (_) {
+          this.appendPageLoadError(pageNumber, pages, token);
+          if (pageNumber === 1) loading.remove();
+        }
+      }
+
+      pages.setAttribute("aria-busy", "false");
+      if (!this.pageStates.length) throw new Error("No presentation pages were available.");
+    } catch (_) {
+      if (this.isCurrent(token)) this.showLoadError();
+    }
+  },
+
+  isCurrent(token) {
+    return this.isOpen && token === this.generation;
+  },
+
+  setupRendering(token) {
+    this.renderObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const state = this.pageStates.find((candidate) => candidate.holder === entry.target);
+        if (!state) return;
+        state.wanted = entry.isIntersecting;
+        if (state.wanted) {
+          this.scheduleRender(state, token);
+        } else if (state.renderTask) {
+          state.renderTask.cancel();
+        } else {
+          this.releaseCanvas(state);
+        }
+      });
+    }, {
+      root: this.viewer,
+      rootMargin: "135% 0px",
+      threshold: 0.01
+    });
+
+    this.resizeObserver = new ResizeObserver(() => {
+      clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(() => this.refreshRenderedPages(token), 140);
+    });
+    this.resizeObserver.observe(this.viewer);
+  },
+
+  createPageState(page, pageNumber, viewport, pages, token) {
+    const holder = document.createElement("section");
+    holder.className = "presentation-window__page";
+    holder.dataset.page = String(pageNumber);
+    holder.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
+    holder.setAttribute("role", "group");
+    holder.setAttribute("aria-label", `Presentation page ${pageNumber}`);
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "presentation-window__canvas";
+    canvas.setAttribute("aria-label", `Rendered presentation page ${pageNumber}`);
+    holder.appendChild(canvas);
+    pages.appendChild(holder);
+
+    return {
+      page,
+      pageNumber,
+      baseViewport: viewport,
+      holder,
+      canvas,
+      token,
+      wanted: false,
+      queued: false,
+      rendered: false,
+      renderTask: null,
+      needsResize: false
+    };
+  },
+
+  scheduleRender(state, token) {
+    if (!this.isCurrent(token) || !state.wanted || state.queued || state.rendered || state.renderTask) return;
+    state.queued = true;
+    this.renderQueue.push(state);
+    this.drainRenderQueue(token);
+  },
+
+  drainRenderQueue(token) {
+    const maxConcurrent = Env.mobile ? 1 : 2;
+    while (this.activeRenders < maxConcurrent && this.renderQueue.length) {
+      const state = this.renderQueue.shift();
+      state.queued = false;
+      if (!state.wanted || !this.isCurrent(token)) continue;
+      this.activeRenders += 1;
+      this.renderPage(state, token).finally(() => {
+        this.activeRenders = Math.max(0, this.activeRenders - 1);
+        this.drainRenderQueue(token);
+      });
+    }
+  },
+
+  async renderPage(state, token) {
+    if (!this.isCurrent(token) || !state.wanted) return;
+    const cssWidth = Math.max(1, Math.floor(state.holder.clientWidth));
+    const cssScale = cssWidth / state.baseViewport.width;
+    let outputScale = Math.min(window.devicePixelRatio || 1, Env.mobile ? 2 : 2.25);
+    const cssHeight = state.baseViewport.height * cssScale;
+    const maxPixels = Env.mobile ? 8_000_000 : 12_000_000;
+    const requestedPixels = cssWidth * cssHeight * outputScale * outputScale;
+    if (requestedPixels > maxPixels) outputScale *= Math.sqrt(maxPixels / requestedPixels);
+
+    const renderViewport = state.page.getViewport({ scale: cssScale * outputScale });
+    const context = state.canvas.getContext("2d", { alpha: false });
+    state.canvas.width = Math.max(1, Math.floor(renderViewport.width));
+    state.canvas.height = Math.max(1, Math.floor(renderViewport.height));
+    state.canvas.style.width = `${cssWidth}px`;
+    state.canvas.style.height = `${Math.round(cssHeight)}px`;
+    state.holder.classList.remove("has-error");
+
+    try {
+      state.renderTask = state.page.render({
+        canvasContext: context,
+        viewport: renderViewport,
+        background: "rgb(255, 255, 255)"
+      });
+      await state.renderTask.promise;
+      if (!this.isCurrent(token)) return;
+      state.rendered = true;
+      state.holder.classList.add("is-rendered");
+    } catch (error) {
+      if (error?.name !== "RenderingCancelledException" && this.isCurrent(token)) {
+        this.showPageError(state);
+      }
+    } finally {
+      state.renderTask = null;
+      if (state.needsResize) {
+        state.needsResize = false;
+        this.releaseCanvas(state);
+        if (state.wanted) this.scheduleRender(state, token);
+      } else if (!state.wanted) {
+        this.releaseCanvas(state);
+      }
+    }
+  },
+
+  refreshRenderedPages(token) {
+    if (!this.isCurrent(token)) return;
+    this.renderQueue = [];
+    this.pageStates.forEach((state) => {
+      state.queued = false;
+      if (state.renderTask) {
+        state.needsResize = true;
+        return;
+      }
+      if (state.rendered) this.releaseCanvas(state);
+      if (state.wanted) this.scheduleRender(state, token);
+    });
+  },
+
+  releaseCanvas(state) {
+    if (!state.rendered) return;
+    state.canvas.width = 1;
+    state.canvas.height = 1;
+    state.canvas.removeAttribute("style");
+    state.rendered = false;
+    state.holder.classList.remove("is-rendered");
+    state.page.cleanup();
+  },
+
+  showPageError(state) {
+    state.holder.classList.add("has-error");
+    state.holder.classList.remove("is-rendered");
+    let notice = $(".presentation-window__page-error", state.holder);
+    if (notice) return;
+    notice = document.createElement("div");
+    notice.className = "presentation-window__page-error";
     const message = document.createElement("p");
-    message.textContent = "Use your browser's PDF viewer to open the presentation.";
-    const link = document.createElement("a");
-    link.className = "presentation-window__fallback-link u-label";
-    link.href = PROJECT_PDF;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "Open project presentation";
-    fallback.append(message, link);
-    return fallback;
+    message.textContent = `Page ${String(state.pageNumber).padStart(2, "0")} could not be rendered.`;
+    const retry = document.createElement("button");
+    retry.className = "presentation-window__retry u-label";
+    retry.type = "button";
+    retry.textContent = "Retry page";
+    retry.addEventListener("click", () => {
+      notice.remove();
+      state.holder.classList.remove("has-error");
+      state.wanted = true;
+      this.scheduleRender(state, state.token);
+    });
+    notice.append(message, retry);
+    state.holder.appendChild(notice);
   },
 
-  showInlineFallback() {
-    if (!this.isOpen) return;
-    this.viewer.replaceChildren(this.buildFallback());
+  appendPageLoadError(pageNumber, pages, token) {
+    const holder = document.createElement("section");
+    holder.className = "presentation-window__page presentation-window__page--load-error";
+    holder.setAttribute("role", "group");
+    holder.setAttribute("aria-label", `Presentation page ${pageNumber} failed to load`);
+    const message = document.createElement("p");
+    message.textContent = `Page ${String(pageNumber).padStart(2, "0")} could not be loaded.`;
+    const retry = document.createElement("button");
+    retry.className = "presentation-window__retry u-label";
+    retry.type = "button";
+    retry.textContent = "Retry page";
+    retry.addEventListener("click", async () => {
+      if (!this.isCurrent(token) || !this.pdfDocument) return;
+      retry.disabled = true;
+      try {
+        const page = await this.pdfDocument.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1 });
+        const state = this.createPageState(page, pageNumber, viewport, document.createDocumentFragment(), token);
+        holder.replaceWith(state.holder);
+        this.pageStates.push(state);
+        this.renderObserver.observe(state.holder);
+      } catch (_) {
+        retry.disabled = false;
+      }
+    });
+    holder.append(message, retry);
+    pages.appendChild(holder);
+  },
+
+  showLoadError() {
+    const error = document.createElement("div");
+    error.className = "presentation-window__error";
+    const message = document.createElement("p");
+    message.textContent = "The presentation could not be loaded.";
+    const actions = document.createElement("div");
+    actions.className = "presentation-window__error-actions";
+    const retry = document.createElement("button");
+    retry.className = "presentation-window__retry u-label";
+    retry.type = "button";
+    retry.textContent = "Retry presentation";
+    retry.addEventListener("click", () => this.mountViewer());
+    const original = document.createElement("a");
+    original.className = "presentation-window__original u-label";
+    original.href = PROJECT_PDF;
+    original.target = "_blank";
+    original.rel = "noopener";
+    original.textContent = "Open original PDF ↗";
+    actions.append(retry, original);
+    error.append(message, actions);
+    this.viewer.replaceChildren(error);
   },
 
   lockPage() {
@@ -2724,9 +2985,35 @@ const ProjectPresentation = {
     window.scrollTo(lock.x, lock.y);
   },
 
+  stopPresentation() {
+    this.generation += 1;
+    clearTimeout(this.resizeTimer);
+    this.renderObserver?.disconnect();
+    this.resizeObserver?.disconnect();
+    this.renderObserver = null;
+    this.resizeObserver = null;
+    this.renderQueue = [];
+    this.pageStates.forEach((state) => {
+      try { state.renderTask?.cancel(); } catch (_) {}
+      state.queued = false;
+      state.wanted = false;
+    });
+    this.pageStates = [];
+    this.activeRenders = 0;
+
+    const loadingTask = this.loadingTask;
+    const pdfDocument = this.pdfDocument;
+    this.loadingTask = null;
+    this.pdfDocument = null;
+    if (loadingTask) {
+      try { loadingTask.destroy().catch(() => {}); } catch (_) {}
+    } else if (pdfDocument) {
+      try { pdfDocument.destroy().catch(() => {}); } catch (_) {}
+    }
+  },
+
   unmountViewer() {
-    const pdf = $(".presentation-window__pdf", this.viewer);
-    if (pdf) pdf.removeAttribute("data");
+    this.stopPresentation();
     this.viewer.replaceChildren();
   },
 
