@@ -1045,7 +1045,7 @@ body:not([data-audio="on"]) .hud__sound-mark i {
   transform: translate(-1px, -50%);
 }
 
-.hud__film {
+.hud__media-controls {
   position: absolute;
   top: calc(
     var(--safe-top) + var(--hud-side-control-offset) +
@@ -1053,17 +1053,35 @@ body:not([data-audio="on"]) .hud__sound-mark i {
     var(--hud-side-control-height) + var(--hud-side-control-gap)
   );
   right: var(--safe-right);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--hud-side-control-gap);
+}
+
+.hud__film,
+.hud__presentation {
   min-height: var(--hud-side-control-height);
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.55rem;
   color: rgba(239, 233, 223, 0.68);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.48);
   transition: color 0.35s ease;
 }
 
 .hud__film:hover,
-.hud__film:focus-visible {
+.hud__film:focus-visible,
+.hud__presentation:hover,
+.hud__presentation:focus-visible {
   color: rgba(255, 250, 242, 0.94);
+}
+
+.hud__film:active,
+.hud__presentation:active {
+  color: rgba(255, 250, 242, 1);
 }
 
 .hud__film-mark {
@@ -1082,28 +1100,6 @@ body:not([data-audio="on"]) .hud__sound-mark i {
   width: 1px;
   background: currentColor;
   opacity: 0.45;
-}
-
-.hud__presentation {
-  position: absolute;
-  top: calc(
-    var(--safe-top) + var(--hud-side-control-offset) +
-    var(--hud-side-control-height) + var(--hud-side-control-gap) +
-    var(--hud-side-control-height) + var(--hud-side-control-gap) +
-    var(--hud-side-control-height) + var(--hud-side-control-gap)
-  );
-  right: var(--safe-right);
-  min-height: var(--hud-side-control-height);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: rgba(239, 233, 223, 0.68);
-  transition: color 0.35s ease;
-}
-
-.hud__presentation:hover,
-.hud__presentation:focus-visible {
-  color: rgba(255, 250, 242, 0.94);
 }
 
 .hud__presentation-mark {
@@ -1332,6 +1328,7 @@ body[data-final-scene="true"] .signature {
 .presentation-overlay {
   position: fixed;
   inset: 0;
+  /* HUD 50 < menu 80 < film 100 < presentation 110. */
   z-index: 110;
   display: grid;
   place-items: center;
@@ -1355,8 +1352,11 @@ body[data-final-scene="true"] .signature {
 }
 
 .presentation-window {
+  position: relative;
+  z-index: 0;
   width: min(91vw, 112rem);
-  height: min(90vh, 90svh);
+  height: min(90vh, 90rem);
+  height: min(90dvh, 90rem);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -1375,7 +1375,9 @@ body[data-final-scene="true"] .signature {
 }
 
 .presentation-window__bar {
-  min-height: 42px;
+  position: relative;
+  z-index: 2;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1393,9 +1395,11 @@ body[data-final-scene="true"] .signature {
 }
 
 .presentation-window__close {
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  position: relative;
+  z-index: 3;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   color: rgba(239, 233, 223, 0.72);
@@ -1417,6 +1421,7 @@ body[data-final-scene="true"] .signature {
   min-width: 0;
   min-height: 0;
   position: relative;
+  z-index: 1;
   overflow: hidden;
   background: #202124;
 }
@@ -1461,23 +1466,41 @@ body[data-final-scene="true"] .signature {
   border-color: currentColor;
 }
 
+html[data-viewport="tabletLandscape"] .presentation-overlay,
+html[data-viewport="tabletPortrait"] .presentation-overlay {
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+}
+
+html[data-viewport="tabletLandscape"] .presentation-window,
+html[data-viewport="tabletPortrait"] .presentation-window {
+  width: 100%;
+  max-width: 100%;
+  height: calc(100vh - 24px);
+  height: calc(100dvh - 24px);
+  max-height: 100%;
+}
+
 @media (max-width: 800px) {
-  .presentation-overlay {
+  html[data-viewport="mobile"] .presentation-overlay {
     padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
       max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
   }
 
-  .presentation-window {
+  html[data-viewport="mobile"] .presentation-window {
     width: 100%;
-    height: 100%;
+    max-width: 100%;
+    height: calc(100vh - 16px);
+    height: calc(100dvh - 16px);
+    max-height: 100%;
   }
 
-  .presentation-window__bar {
+  html[data-viewport="mobile"] .presentation-window__bar {
     min-height: 46px;
     padding-left: 0.8rem;
   }
 
-  .presentation-window__title {
+  html[data-viewport="mobile"] .presentation-window__title {
     font-size: 0.6rem;
     letter-spacing: 0.17em;
   }
@@ -1908,15 +1931,48 @@ html[data-viewport="mobile"] .hud__menu {
   top: calc(var(--safe-top) - 0.7rem);
 }
 
+html[data-viewport="tabletLandscape"] .hud,
+html[data-viewport="tabletPortrait"] .hud,
 html[data-viewport="mobile"] .hud {
   --hud-side-control-offset: 2.25rem;
   --hud-side-control-height: 44px;
 }
 
+html[data-viewport="tabletLandscape"] .hud__film,
+html[data-viewport="tabletLandscape"] .hud__presentation,
+html[data-viewport="tabletPortrait"] .hud__film,
+html[data-viewport="tabletPortrait"] .hud__presentation,
 html[data-viewport="mobile"] .hud__home,
 html[data-viewport="mobile"] .hud__film,
 html[data-viewport="mobile"] .hud__presentation {
   min-width: 64px;
+}
+
+@media (pointer: coarse) {
+  .hud {
+    --hud-side-control-offset: 2.25rem;
+    --hud-side-control-height: 44px;
+  }
+
+  .hud__film,
+  .hud__presentation {
+    min-width: 64px;
+  }
+}
+
+@media (pointer: coarse) and (min-width: 801px) {
+  .presentation-overlay {
+    padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+      max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .presentation-window {
+    width: 100%;
+    max-width: 100%;
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    max-height: 100%;
+  }
 }
 
 html[data-viewport="mobile"] .hero-type {

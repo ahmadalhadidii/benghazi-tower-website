@@ -2564,7 +2564,7 @@ const ProjectPresentation = {
   isOpen:      false,
   initialized: false,
   cleanupTimer: null,
-  previousTouchAction: null,
+  pageLock:    null,
 
   init() {
     if (this.initialized || !this.overlay || !this.trigger || !this.close || !this.viewer) return;
@@ -2596,16 +2596,15 @@ const ProjectPresentation = {
 
   open() {
     if (this.isOpen || body.dataset.state !== "ready" || ProjectFilm.isOpen) return;
+    if (!this.canEmbedInline()) {
+      this.openNativeViewer();
+      return;
+    }
+
     this.isOpen = true;
     this.lastFocus = document.activeElement;
     clearTimeout(this.cleanupTimer);
-
-    this.previousTouchAction = {
-      root: document.documentElement.style.touchAction,
-      body: document.body.style.touchAction
-    };
-    document.documentElement.style.touchAction = "auto";
-    document.body.style.touchAction = "auto";
+    this.lockPage();
     body.dataset.presentationOpen = "true";
 
     this.mountViewer();
@@ -2623,11 +2622,7 @@ const ProjectPresentation = {
     this.overlay.dataset.open = "false";
     this.overlay.setAttribute("aria-hidden", "true");
 
-    if (this.previousTouchAction) {
-      document.documentElement.style.touchAction = this.previousTouchAction.root;
-      document.body.style.touchAction = this.previousTouchAction.body;
-      this.previousTouchAction = null;
-    }
+    this.unlockPage();
 
     this.cleanupTimer = setTimeout(() => this.unmountViewer(), Env.reducedMotion ? 0 : 300);
     const focusTarget = this.lastFocus && document.contains(this.lastFocus)
@@ -2643,11 +2638,35 @@ const ProjectPresentation = {
     pdf.type = "application/pdf";
     pdf.data = PROJECT_PDF;
     pdf.setAttribute("aria-label", "Libya Tower project presentation PDF");
+    pdf.addEventListener("error", () => this.showInlineFallback(), { once: true });
+    pdf.appendChild(this.buildFallback());
+    this.viewer.appendChild(pdf);
+  },
 
+  canEmbedInline() {
+    const ua = navigator.userAgent || "";
+    const iOS = /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const android = /Android/i.test(ua);
+    if (iOS || android || navigator.userAgentData?.mobile) return false;
+    if ("pdfViewerEnabled" in navigator) return navigator.pdfViewerEnabled === true;
+    return Boolean(navigator.mimeTypes?.["application/pdf"]?.enabledPlugin);
+  },
+
+  openNativeViewer() {
+    const opened = window.open(PROJECT_PDF, "_blank");
+    if (opened) {
+      try { opened.opener = null; } catch (_) {}
+      return;
+    }
+    window.location.assign(PROJECT_PDF);
+  },
+
+  buildFallback() {
     const fallback = document.createElement("div");
     fallback.className = "presentation-window__fallback";
     const message = document.createElement("p");
-    message.textContent = "This browser cannot display the presentation inline.";
+    message.textContent = "Use your browser's PDF viewer to open the presentation.";
     const link = document.createElement("a");
     link.className = "presentation-window__fallback-link u-label";
     link.href = PROJECT_PDF;
@@ -2655,8 +2674,54 @@ const ProjectPresentation = {
     link.rel = "noopener";
     link.textContent = "Open project presentation";
     fallback.append(message, link);
-    pdf.appendChild(fallback);
-    this.viewer.appendChild(pdf);
+    return fallback;
+  },
+
+  showInlineFallback() {
+    if (!this.isOpen) return;
+    this.viewer.replaceChildren(this.buildFallback());
+  },
+
+  lockPage() {
+    const rootStyle = document.documentElement.style;
+    const bodyStyle = body.style;
+    this.pageLock = {
+      x: window.scrollX,
+      y: window.scrollY,
+      rootOverflow: rootStyle.overflow,
+      rootTouchAction: rootStyle.touchAction,
+      bodyOverflow: bodyStyle.overflow,
+      bodyTouchAction: bodyStyle.touchAction,
+      bodyPosition: bodyStyle.position,
+      bodyTop: bodyStyle.top,
+      bodyLeft: bodyStyle.left,
+      bodyWidth: bodyStyle.width
+    };
+    rootStyle.overflow = "hidden";
+    rootStyle.touchAction = "auto";
+    bodyStyle.overflow = "hidden";
+    bodyStyle.touchAction = "auto";
+    bodyStyle.position = "fixed";
+    bodyStyle.top = `-${this.pageLock.y}px`;
+    bodyStyle.left = `-${this.pageLock.x}px`;
+    bodyStyle.width = "100%";
+  },
+
+  unlockPage() {
+    if (!this.pageLock) return;
+    const lock = this.pageLock;
+    const rootStyle = document.documentElement.style;
+    const bodyStyle = body.style;
+    rootStyle.overflow = lock.rootOverflow;
+    rootStyle.touchAction = lock.rootTouchAction;
+    bodyStyle.overflow = lock.bodyOverflow;
+    bodyStyle.touchAction = lock.bodyTouchAction;
+    bodyStyle.position = lock.bodyPosition;
+    bodyStyle.top = lock.bodyTop;
+    bodyStyle.left = lock.bodyLeft;
+    bodyStyle.width = lock.bodyWidth;
+    this.pageLock = null;
+    window.scrollTo(lock.x, lock.y);
   },
 
   unmountViewer() {
