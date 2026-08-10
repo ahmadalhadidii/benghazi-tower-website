@@ -897,6 +897,9 @@ body[data-main="true"][data-proposal-dragging="true"] .hero-stage {
    -------------------------------------------------------------------------- */
 
 .hud {
+  --hud-side-control-offset: 3.15rem;
+  --hud-side-control-height: 32px;
+  --hud-side-control-gap: 0.25rem;
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -961,9 +964,9 @@ body[data-main="true"][data-proposal-dragging="true"] .hero-stage {
 
 .hud__sound {
   position: absolute;
-  top: calc(var(--safe-top) + 3.15rem);
+  top: calc(var(--safe-top) + var(--hud-side-control-offset));
   right: var(--safe-right);
-  min-height: 32px;
+  min-height: var(--hud-side-control-height);
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -1001,9 +1004,12 @@ body:not([data-audio="on"]) .hud__sound-mark i {
 
 .hud__home {
   position: absolute;
-  top: calc(var(--safe-top) + 3.15rem);
-  left: var(--safe-left);
-  min-height: 32px;
+  top: calc(
+    var(--safe-top) + var(--hud-side-control-offset) +
+    var(--hud-side-control-height) + var(--hud-side-control-gap)
+  );
+  right: var(--safe-right);
+  min-height: var(--hud-side-control-height);
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -1573,14 +1579,12 @@ html[data-viewport="mobile"] .hud__menu {
   top: calc(var(--safe-top) - 0.7rem);
 }
 
-html[data-viewport="mobile"] .hud__sound {
-  top: calc(var(--safe-top) + 2.25rem);
-  min-height: 44px;
+html[data-viewport="mobile"] .hud {
+  --hud-side-control-offset: 2.25rem;
+  --hud-side-control-height: 44px;
 }
 
 html[data-viewport="mobile"] .hud__home {
-  top: calc(var(--safe-top) + 2.25rem);
-  min-height: 44px;
   min-width: 64px;
 }
 
