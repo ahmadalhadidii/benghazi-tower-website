@@ -1524,8 +1524,7 @@ body[data-final-scene="true"] .signature {
   gap: 0.8rem 1.5rem;
 }
 
-.presentation-window__retry,
-.presentation-window__original {
+.presentation-window__retry {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -1534,9 +1533,7 @@ body[data-final-scene="true"] .signature {
 }
 
 .presentation-window__retry:hover,
-.presentation-window__retry:focus-visible,
-.presentation-window__original:hover,
-.presentation-window__original:focus-visible {
+.presentation-window__retry:focus-visible {
   color: rgba(255, 250, 242, 0.98);
   border-color: currentColor;
 }

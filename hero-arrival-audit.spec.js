@@ -12,9 +12,12 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
   expect(hash).toBe("10E956ED41DBF155E9E566D0B72566FE17E8D70B7B5F7A05A54D54E09A75921A");
 });
 
-test("updated cinematic assets use one stable cache version", () => {
+test("updated site assets use intentional cache versions", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-  for (const asset of ["styles.css", "script.js", "benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
+  for (const asset of ["styles.css", "script.js"]) {
+    expect(html).toContain(`${asset}?v=20260810-pdfjs2`);
+  }
+  for (const asset of ["benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
     expect(html).toContain(`${asset}?v=20260809-cinematic7`);
   }
 });

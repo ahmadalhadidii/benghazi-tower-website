@@ -2924,21 +2924,15 @@ const ProjectPresentation = {
     const error = document.createElement("div");
     error.className = "presentation-window__error";
     const message = document.createElement("p");
-    message.textContent = "The presentation could not be loaded.";
+    message.textContent = "Unable to display the presentation.";
     const actions = document.createElement("div");
     actions.className = "presentation-window__error-actions";
     const retry = document.createElement("button");
     retry.className = "presentation-window__retry u-label";
     retry.type = "button";
-    retry.textContent = "Retry presentation";
+    retry.textContent = "Retry";
     retry.addEventListener("click", () => this.mountViewer());
-    const original = document.createElement("a");
-    original.className = "presentation-window__original u-label";
-    original.href = PROJECT_PDF;
-    original.target = "_blank";
-    original.rel = "noopener";
-    original.textContent = "Open original PDF ↗";
-    actions.append(retry, original);
+    actions.appendChild(retry);
     error.append(message, actions);
     this.viewer.replaceChildren(error);
   },
