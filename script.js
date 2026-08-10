@@ -2441,6 +2441,118 @@ const SceneNavigation = {
    10. Interface — HUD, menu (built dynamically from scene config)
    -------------------------------------------------------------------------- */
 
+const ProjectFilm = {
+  overlay:     $("#project-film-overlay"),
+  trigger:     $("#hud-film"),
+  close:       $("#project-film-close"),
+  replay:      $("#project-film-replay"),
+  video:       $("#project-film"),
+  lastFocus:   null,
+  isOpen:      false,
+  initialized: false,
+
+  init() {
+    if (this.initialized || !this.overlay || !this.trigger || !this.video) return;
+    this.initialized = true;
+
+    this.trigger.addEventListener("click", () => this.open());
+    this.close.addEventListener("click", () => this.hide());
+    this.replay.addEventListener("click", () => this.playFromStart());
+    this.video.addEventListener("loadeddata", () => this.video.classList.add("is-ready"));
+    this.video.addEventListener("playing", () => this.video.classList.add("is-ready"));
+    this.video.addEventListener("ended", () => {
+      if (this.isOpen) this.replay.hidden = false;
+    });
+
+    this.overlay.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    }, { passive: false });
+
+    ["touchstart", "touchmove", "touchend"].forEach((type) => {
+      this.overlay.addEventListener(type, (event) => {
+        if (type === "touchmove") event.preventDefault();
+        event.stopPropagation();
+      }, { passive: type !== "touchmove" });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!this.isOpen) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.hide();
+      } else if (event.key === "Tab") {
+        this.trapFocus(event);
+      }
+      event.stopPropagation();
+    });
+  },
+
+  open() {
+    if (this.isOpen || body.dataset.state !== "ready") return;
+    this.isOpen = true;
+    this.lastFocus = document.activeElement;
+    body.dataset.filmOpen = "true";
+    this.replay.hidden = true;
+    this.video.classList.remove("is-ready");
+    this.video.muted = true;
+    this.video.defaultMuted = true;
+    this.video.playsInline = true;
+
+    if (!this.video.getAttribute("src")) {
+      this.video.src = this.video.dataset.src;
+      this.video.load();
+    }
+
+    try { this.video.currentTime = 0; } catch (_) {}
+    this.overlay.inert = false;
+    this.overlay.dataset.open = "true";
+    this.overlay.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => this.close.focus());
+    this.video.play().catch(() => {});
+  },
+
+  hide() {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    body.dataset.filmOpen = "false";
+    this.video.pause();
+    try { this.video.currentTime = 0; } catch (_) {}
+    this.video.classList.remove("is-ready");
+    this.replay.hidden = true;
+    this.overlay.inert = true;
+    this.overlay.dataset.open = "false";
+    this.overlay.setAttribute("aria-hidden", "true");
+
+    const focusTarget = this.lastFocus && document.contains(this.lastFocus)
+      ? this.lastFocus
+      : this.trigger;
+    requestAnimationFrame(() => focusTarget.focus());
+  },
+
+  playFromStart() {
+    if (!this.isOpen) return;
+    this.replay.hidden = true;
+    this.video.muted = true;
+    try { this.video.currentTime = 0; } catch (_) {}
+    this.video.play().catch(() => {});
+  },
+
+  trapFocus(event) {
+    const items = $$("button:not([hidden])", this.overlay).filter((el) => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+};
+
 const Interface = {
   menu:    $("#menu"),
   trigger: $("#menu-trigger"),
@@ -2572,6 +2684,7 @@ const Experience = {
     SceneDeck.render();
     this.applyFraming();
     Interface.init();
+    ProjectFilm.init();
 
     await Loader.run();
     Intro.build();
@@ -2722,6 +2835,7 @@ if (window.gsap) {
   $(".hero-type__place").style.opacity = 1;
   $(".hero-type__subtitle").style.opacity = 1;
   Interface.init();
+  ProjectFilm.init();
   Interface.buildMenu();
   SceneNavigation.build();
   SceneNavigation.updateHUD(0);
