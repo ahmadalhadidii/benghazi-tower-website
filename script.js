@@ -605,7 +605,7 @@ const AmbientSound = {
 
     this._firstInteraction = (event) => {
       const target = event.target;
-      if (target instanceof Element && target.closest("#hero-sound")) return;
+      if (target instanceof Element && target.closest("#hero-sound, #hud-film, #project-film-overlay")) return;
       if (!this.userWantsSound || this.isActuallyPlaying()) return;
       if (this.starting && this.startingFromInteraction) return;
       this.enable({ fromInteraction: true });
@@ -2498,6 +2498,9 @@ const ProjectFilm = {
     this.video.muted = true;
     this.video.defaultMuted = true;
     this.video.playsInline = true;
+    this.video.setAttribute("muted", "");
+    this.video.setAttribute("playsinline", "");
+    this.video.setAttribute("webkit-playsinline", "");
 
     if (!this.video.getAttribute("src")) {
       this.video.src = this.video.dataset.src;
@@ -2534,6 +2537,8 @@ const ProjectFilm = {
     if (!this.isOpen) return;
     this.replay.hidden = true;
     this.video.muted = true;
+    this.video.playsInline = true;
+    this.video.setAttribute("webkit-playsinline", "");
     try { this.video.currentTime = 0; } catch (_) {}
     this.video.play().catch(() => {});
   },

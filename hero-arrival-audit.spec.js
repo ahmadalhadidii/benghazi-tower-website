@@ -15,7 +15,7 @@ test("loop-safe production soundtrack matches the selected Pixabay master build"
 test("updated site assets use intentional cache versions", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   for (const asset of ["styles.css", "script.js"]) {
-    expect(html).toContain(`${asset}?v=20260810-pdfjs2`);
+    expect(html).toContain(`${asset}?v=20260810-iosfilm1`);
   }
   for (const asset of ["benghazi-tower-arrival.mp4", "benghazi-ambient.mp3"]) {
     expect(html).toContain(`${asset}?v=20260809-cinematic7`);

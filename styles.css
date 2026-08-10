@@ -1241,6 +1241,9 @@ body[data-final-scene="true"] .signature {
 .film-overlay {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   z-index: 100;
   overflow: hidden;
   background: rgba(3, 4, 5, 0.992);
@@ -1263,11 +1266,21 @@ body[data-final-scene="true"] .signature {
   inset: 0;
   display: grid;
   place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .film-overlay__video {
+  display: block;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   opacity: 0;
   transition: opacity 0.65s ease;
